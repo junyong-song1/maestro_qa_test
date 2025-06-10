@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-# maestro_qa_test
-=======
 # maestro_qa_test
 
 ## 프로젝트 개요
@@ -40,4 +37,3 @@ api_key = YOUR_API_KEY
 ## 기타
 - 불필요한 로그, 결과, 임시 파일 등은 .gitignore로 자동 제외됩니다.
 - mp4 등 대용량 파일은 직접 삭제해 주세요.
->>>>>>> e4e995a (init: 프로젝트 최초 업로드)
