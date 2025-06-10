@@ -1,0 +1,8 @@
+appId: net.cj.cjhv.gs.tving
+---
+# 회원탈퇴
+# TestRail Case ID: 313772
+# https://tving.testrail.io/index.php?/cases/view/313772
+# (수동 변환 필요)
+
+- startRecording: "result/{{DATE}}/TC313772_회원탈퇴_{{TIME}}"

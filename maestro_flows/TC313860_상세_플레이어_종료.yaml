@@ -1,0 +1,33 @@
+appId: net.cj.cjhv.gs.tving
+---
+# 상세 플레이어 종료
+# TestRail Case ID: 313860
+# https://tving.testrail.io/index.php?/cases/view/313860
+# (수동 변환 필요)
+- startRecording: "result/{{DATE}}/TC313860_상세_플레이어_종료_{{TIME}}"
+#- launchApp
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/image_thumbnail"
+    index: 0
+    optional: true
+
+# 뒤로 가기 버튼이 없는 경우 surface_view 클릭
+- runFlow:
+    when:
+      notVisible:
+        text: "뒤로 가기"
+    commands:
+      - tapOn:
+          id: "net.cj.cjhv.gs.tving:id/surface_view"
+
+# extendedWaitUntil 사용 (실제 Maestro API)
+- extendedWaitUntil:
+    visible:
+      text: "뒤로 가기"
+    timeout: 5000
+
+- tapOn:
+    text: "뒤로 가기"  
+      #- runFlow: TC313770_1_로그아웃.yaml
+#- runFlow: sub_flows/TC313770_1_로그아웃.yaml 
+- stopRecording

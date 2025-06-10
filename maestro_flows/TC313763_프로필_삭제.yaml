@@ -1,0 +1,8 @@
+appId: net.cj.cjhv.gs.tving
+---
+# 프로필 삭제
+# TestRail Case ID: 313763
+# https://tving.testrail.io/index.php?/cases/view/313763
+# (수동 변환 필요)
+- startRecording: "result/{{DATE}}/TC313763_프로필_삭제_{{TIME}}"
+- stopRecording

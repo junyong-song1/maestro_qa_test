@@ -1,0 +1,17 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Project Structure Guide
+
+이 프로젝트의 주요 구조와 파일 역할은 다음과 같습니다.
+
+- @scripts/testrail_maestro_runner.py: TestRail과 Maestro 연동 자동화의 메인 엔트리포인트. TestRail에서 케이스 목록을 받아와 Maestro로 순차 실행, 결과/첨부 자동 업로드.
+- @config.ini: 실제 환경설정 파일 (API Key 등 민감정보 포함, git에 올리지 않음)
+- @config.ini.example: 환경설정 예시 파일 (민감정보 미포함, git에 포함)
+- @maestro_flows/: Maestro 테스트 플로우 YAML 파일 디렉토리
+- @scripts/: TestRail 연동 및 기타 자동화 Python 스크립트 디렉토리
+- @logs/: 테스트 실행 로그 저장 폴더 (주기적 정리 필요)
+- @result/: 테스트 결과(mp4, txt 등) 저장 폴더 (주기적 정리 필요)
+- @README.md: 프로젝트 설명 및 운영 가이드

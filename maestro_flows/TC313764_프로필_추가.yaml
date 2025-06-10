@@ -1,0 +1,8 @@
+appId: net.cj.cjhv.gs.tving
+---
+# 프로필 추가
+# TestRail Case ID: 313764
+# https://tving.testrail.io/index.php?/cases/view/313764
+# (수동 변환 필요)
+- startRecording: "result/{{DATE}}/TC313764_프로필_추가_{{TIME}}"
+- stopRecording

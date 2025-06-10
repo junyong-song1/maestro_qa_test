@@ -1,0 +1,13 @@
+# macOS
+.DS_Store
+
+# 환경설정/민감정보
+config.ini
+
+# 로그/결과/임시파일
+logs/
+result/
+*.log
+*.tmp
+*.mp4
+*.txt 
