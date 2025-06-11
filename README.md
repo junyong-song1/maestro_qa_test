@@ -3,6 +3,31 @@
 ## 프로젝트 개요
 Maestro와 TestRail을 연동하여 테스트 자동화 및 결과 업로드를 지원하는 프로젝트입니다.
 
+---
+
+## 전체 동작 다이어그램
+
+```mermaid
+flowchart TD
+    A[사용자] -->|install_and_run.sh 실행| B(가상환경 생성 및 패키지 설치)
+    B --> C{config.ini 존재 확인}
+    C -- 예시 파일 복사 필요 --> D[config.ini.example → config.ini]
+    C -- 이미 존재 --> E[환경 준비 완료]
+    D --> E
+    E --> F[testrail_maestro_runner.py 실행]
+    F --> G[TestRail에서 테스트케이스 목록 조회]
+    G --> H[maestro_flows/ 에서 YAML 플로우 매칭]
+    H --> I[Maestro로 테스트 자동 실행]
+    I --> J[실행 결과 result/ 및 logs/ 저장]
+    I --> K[TestRail에 결과 및 첨부 자동 업로드]
+    J --> L[불필요 파일은 .gitignore로 관리]
+    K --> M[테스트 완료 보고]
+    style L fill:#fff,stroke:#bbb,stroke-width:2px
+    style M fill:#fff,stroke:#bbb,stroke-width:2px
+```
+
+---
+
 ## 설치 및 실행 방법
 
 1. 저장소 클론
