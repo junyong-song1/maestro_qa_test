@@ -5,30 +5,5 @@ appId: net.cj.cjhv.gs.tving
 # https://tving.testrail.io/index.php?/cases/view/313767
 # (수동 변환 필요)
 - startRecording: "result/{{DATE}}/TC313767_로그인___TVING_ID_{{TIME}}"
-- tapOn:
-    text: "TVING ID로 시작하기"
-    optional: true
-- tapOn:
-    text: "아이디"
-    optional: true
-- inputText:
-    text: "t_principle4"
-    optional: true
-- tapOn:
-    text: "비밀번호"
-    optional: true
-- inputText:
-    text: "1q2w3e4r5t"
-    optional: true
-- tapOn:
-    text: "로그인하기"
-    optional: true
-- tapOn:
-    id: "net.cj.cjhv.gs.tving:id/image_thumbnail"
-    index: 0
-    optional: true
-- tapOn:
-    id: "net.cj.cjhv.gs.tving:id/image_close"
-    optional: true
-#- runFlow: "TC313770_로그아웃.yaml"
+- runFlow: "sub_flows/login_flow.yaml"
 - stopRecording

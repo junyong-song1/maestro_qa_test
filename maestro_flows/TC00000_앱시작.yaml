@@ -1,6 +1,6 @@
 appId: net.cj.cjhv.gs.tving
 ---
-- startRecording: "result/{{DATE}}/TC00000_앱시작_{{TIME}}"
+#- startRecording: "result/{{DATE}}/TC00000_앱시작_{{TIME}}"
 - launchApp
 - tapOn: "티빙 로그인"
-- stopRecording
+#- stopRecording

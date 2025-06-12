@@ -14,7 +14,7 @@ appId: net.cj.cjhv.gs.tving
     commands:
       - tapOn:
           text: "티빙 로그인" # 위 when 조건과 동일한 선택자 사용
-      - runFlow: sub_flows/TC313767_1_로그인___TVING_ID.yaml 
+      - runFlow: sub_flows/login_flow.yaml 
       - tapOn:
           text: "영화" # "다른 버튼"을 식별할 수 있는 텍스트, ID 등으로 변경해주세요. 예: id: "other_button_id" 또는 text: "게스트로 시작하기" 등
 - runFlow:

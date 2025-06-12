@@ -4,6 +4,9 @@ appId: net.cj.cjhv.gs.tving
 # TestRail Case ID: 313770
 # https://tving.testrail.io/index.php?/cases/view/313770
 # (수동 변환 필요)
+#- launchApp
+- assertVisible:
+    id: "net.cj.cjhv.gs.tving:id/imageMyProfile"
 - tapOn:
     id: "net.cj.cjhv.gs.tving:id/imageMyProfile"
 - repeat:

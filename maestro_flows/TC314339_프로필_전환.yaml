@@ -1,0 +1,30 @@
+appId: net.cj.cjhv.gs.tving
+---
+# 프로필 전환
+# TestRail Case ID: 313762
+# https://tving.testrail.io/index.php?/cases/view/313762
+# (수동 변환 필요)
+- startRecording: "result/{{DATE}}/TC314339_프로필_전환_{{TIME}}"
+- runFlow:
+    when:
+      visible:
+        text: "티빙 로그인" # 또는 id: "tving_login_button_id", accessibilityText: "티빙 로그인" 등 앱의 버튼 식별자에 맞게 수정
+    commands:
+      - tapOn:
+          text: "티빙 로그인" # 위 when 조건과 동일한 선택자 사용
+      - runFlow: sub_flows/login_flow.yaml 
+- runFlow:
+    when:
+      notVisible: # visible의 반대 조건
+        text: "티빙 로그인" # 또는 id: "tving_login_button_id", accessibilityText: "티빙 로그인" 등
+    commands:
+      - tapOn:
+          id: "net.cj.cjhv.gs.tving:id/image_close"
+          optional: true    
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/imageMyProfile"
+- tapOn: 프로필 전환 
+- tapOn:
+    id: net.cj.cjhv.gs.tving:id/image_thumbnail
+    index: 1
+- stopRecording

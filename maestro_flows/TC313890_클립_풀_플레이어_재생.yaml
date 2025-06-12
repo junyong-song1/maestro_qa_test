@@ -3,8 +3,9 @@ appId: net.cj.cjhv.gs.tving
 # 클립 풀 플레이어 재생
 # TestRail Case ID: 313890
 # https://tving.testrail.io/index.php?/cases/view/313890
-
+#- launchApp
 # 로그인 체크 및 처리
+#- launchApp
 - runFlow:
     when:
       visible:
@@ -12,7 +13,7 @@ appId: net.cj.cjhv.gs.tving
     commands:
       - tapOn:
           text: "티빙 로그인"
-      - runFlow: sub_flows/TC313767_1_로그인___TVING_ID.yaml
+      - runFlow: sub_flows/login_flow.yaml
       - tapOn:
           text: "뉴스"
 
@@ -33,28 +34,23 @@ appId: net.cj.cjhv.gs.tving
     index: 0
 
 # 화면 회전 처리
-- runFlow:
-    when:
-      visible:
-        text: "화면 회전"
-    commands:
-      - tapOn:
-          text: "화면 회전"
-
-- runFlow:
-    when:
+- repeat:
+    while:
       notVisible:
         text: "화면 회전"
+    times: 5
     commands:
       - tapOn:
-          id: "net.cj.cjhv.gs.tving:id/surface_view"
+          id: net.cj.cjhv.gs.tving:id/player_container
       - tapOn:
-          text: "화면 회전"
-
+         above:
+            id: net.cj.cjhv.gs.tving:id/controller_compose  
+         containsDescendants:                       # matches a view that has all the descendant views given below
+           - text: "화면 회전"
 # JavaScript 실행 및 검증
 - evalScript: |
     const fs = require('fs');
-    if (!fs.existsSync('result/playing_check.txt')) {
+    if (!fs.existsync('result/playing_check.txt')) {
      throw new Error('playing_check.txt 파일이 존재하지 않습니다.');
     }
     const log = fs.readFileSync('result/playing_check.txt', 'utf-8').trim();
