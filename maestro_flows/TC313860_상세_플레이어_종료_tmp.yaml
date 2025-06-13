@@ -4,7 +4,7 @@ appId: net.cj.cjhv.gs.tving
 # TestRail Case ID: 313860
 # https://tving.testrail.io/index.php?/cases/view/313860
 # (수동 변환 필요)
-#- startRecording: "result/{{DATE}}/TC313860_상세_플레이어_종료_{{TIME}}"
+#- startRecording: "result/20250613/TC313860_상세_플레이어_종료_201741"
 # 썸네일 클릭 (optional)
 - tapOn:
     id: "net.cj.cjhv.gs.tving:id/image_thumbnail"
@@ -29,24 +29,21 @@ appId: net.cj.cjhv.gs.tving
     commands:
       - tapOn:
           text: ".*뒤로.*"
+          enabled: true
 
 # 만약 그래도 뒤로 가기 버튼이 안 보이면 surface_view 한 번 더 클릭 후 시도
 - runFlow:
     when:
       notVisible:
-        text: "*뒤로*"
+        text: ".*뒤로.*"
     commands:
       - tapOn:
           id: "net.cj.cjhv.gs.tving:id/player_container"
       - tapOn: "일시정지"
       - tapOn:
-          text: "*뒤로*"
+          text: ".*뒤로.*"
+          enabled: true
 
-- extendedWaitUntil:
-    visible:
-      text: "뒤로 가기"
-    timeout: 5000
- 
 # # extendedWaitUntil 사용 (실제 Maestro API)
 # - extendedWaitUntil:
 #     visible:

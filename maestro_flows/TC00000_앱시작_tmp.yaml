@@ -1,0 +1,6 @@
+appId: net.cj.cjhv.gs.tving
+---
+#- startRecording: "result/20250613/TC00000_앱시작_201148"
+- launchApp
+- tapOn: "티빙 로그인"
+#- stopRecording

@@ -4,5 +4,8 @@ username = YOUR_ID
 api_key = YOUR_API_KEY_HERE
 project_id = Connect to Project Id
 
+[App]
+package_name = net.cj.cjhv.gs.tving
+
 # 실제 config.ini 파일에는 본인의 API Key를 입력하세요.
 # config.ini 파일은 .gitignore에 추가되어 있으므로 git에 올라가지 않습니다.

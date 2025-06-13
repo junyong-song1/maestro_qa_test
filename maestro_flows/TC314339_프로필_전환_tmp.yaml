@@ -4,7 +4,7 @@ appId: net.cj.cjhv.gs.tving
 # TestRail Case ID: 313762
 # https://tving.testrail.io/index.php?/cases/view/313762
 # (수동 변환 필요)
-#- startRecording: "result/{{DATE}}/TC314339_프로필_전환_{{TIME}}"
+#- startRecording: "result/20250613/TC314339_프로필_전환_185841"
 - runFlow:
     when:
       visible:

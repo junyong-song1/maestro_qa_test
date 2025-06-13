@@ -4,7 +4,7 @@ appId: net.cj.cjhv.gs.tving
 # TestRail Case ID: 313859
 # https://tving.testrail.io/index.php?/cases/view/313859
 # (수동 변환 필요)
-#- startRecording: "result/{{DATE}}/TC313859_상세_플레이어_재생_{{TIME}}"
+#- startRecording: "result/20250613/TC313859_상세_플레이어_재생_201526"
 # 1. "티빙 로그인" 버튼이 화면에 보일 경우
 #- launchApp
 - runFlow:

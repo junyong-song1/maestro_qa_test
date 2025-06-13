@@ -4,7 +4,7 @@ appId: net.cj.cjhv.gs.tving
 # TestRail Case ID: 313769
 # https://tving.testrail.io/index.php?/cases/view/313769
 # (수동 변환 필요)
-- startRecording: "result/{{DATE}}/TC313769_로그인___CJ_ONE_{{TIME}}"
+#- # startRecording: "result/{{DATE}}/TC313769_로그인___CJ_ONE_{{TIME}}"
 - tapOn: "CJ ONE으로 시작하기"
 - tapOn:
     id: "net.cj.cjhv.gs.tving:id/edt_id"
@@ -19,4 +19,4 @@ appId: net.cj.cjhv.gs.tving
 - tapOn:
     id: "net.cj.cjhv.gs.tving:id/image_close"
 - runFlow: "TC313770_로그아웃.yaml"
-- stopRecording
+#- stopRecording

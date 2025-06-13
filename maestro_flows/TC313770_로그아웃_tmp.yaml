@@ -2,6 +2,6 @@ appId: net.cj.cjhv.gs.tving
 ---
 # 로그아웃
 # TestRail Case ID: 313770
-#- startRecording: "result/{{DATE}}/TC313770_로그아웃_{{TIME}}"
+#- startRecording: "result/20250613/TC313770_로그아웃_185755"
 - runFlow: "sub_flows/logout_flow.yaml"
 #- stopRecording
