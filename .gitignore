@@ -4,10 +4,15 @@
 # 환경설정/민감정보
 config.ini
 
+# Python
+venv/
+__pycache__/
+
 # 로그/결과/임시파일
 logs/
 result/
 *.log
 *.tmp
 *.mp4
+*.png
 *.txt 

@@ -50,10 +50,9 @@ appId: net.cj.cjhv.gs.tving
 # JavaScript 실행 및 검증
 - evalScript: |
     const fs = require('fs');
-    if (!fs.existsync('result/playing_check.txt')) {
-     throw new Error('playing_check.txt 파일이 존재하지 않습니다.');
-    }
-    const log = fs.readFileSync('result/playing_check.txt', 'utf-8').trim();
+    const serial = process.env.DEVICE_SERIAL; 
+    const today = new Date().toISOString().slice(0,10).replace(/-/g, '');
+    const log = fs.readFileSync(`/Users/songjun-yong/Workspace/qa_auto_test_project/result/${serial}/${today}/playing_check.txt`, 'utf-8').trim();
     output.jsLogValue = log;
     assertEqual:
       actual: ${output.jsLogValue}

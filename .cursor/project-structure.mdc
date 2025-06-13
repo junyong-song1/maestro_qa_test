@@ -7,11 +7,16 @@ alwaysApply: false
 
 이 프로젝트의 주요 구조와 파일 역할은 다음과 같습니다.
 
-- @scripts/testrail_maestro_runner.py: TestRail과 Maestro 연동 자동화의 메인 엔트리포인트. TestRail에서 케이스 목록을 받아와 Maestro로 순차 실행, 결과/첨부 자동 업로드.
+- @scripts/main.py: 전체 실행 오케스트레이터(멀티프로세싱, shard-all 등)
+- @scripts/testrail.py: TestRail 연동(API, 업로드, 첨부 등)
+- @scripts/maestro_runner.py: Maestro 실행, 임시파일 관리, 결과 파싱
+- @scripts/device_utils.py: 단말기 연결, 정보 추출, 환경 체크
+- @scripts/reporter.py: rich UI, 리포트, 로그 관리
+- @scripts/clean_tmp_yaml.py: *_tmp.yaml 임시파일 자동 삭제
+- @scripts/clean_old_logs_and_results.py: logs/result 폴더 내 오래된 파일/빈 파일 자동 삭제
 - @config.ini: 실제 환경설정 파일 (API Key 등 민감정보 포함, git에 올리지 않음)
 - @config.ini.example: 환경설정 예시 파일 (민감정보 미포함, git에 포함)
-- @maestro_flows/: Maestro 테스트 플로우 YAML 파일 디렉토리
-- @scripts/: TestRail 연동 및 기타 자동화 Python 스크립트 디렉토리
-- @logs/: 테스트 실행 로그 저장 폴더 (주기적 정리 필요)
-- @result/: 테스트 결과(mp4, txt 등) 저장 폴더 (주기적 정리 필요)
+- @maestro_flows/: Maestro 테스트 플로우 YAML 파일 디렉토리(메인/서브 분리)
+- @logs/: 단말기별/날짜별 테스트 실행 로그 저장 폴더 (주기적 정리 필요)
+- @result/: 단말기별/날짜별 테스트 결과(mp4, txt 등) 저장 폴더 (주기적 정리 필요)
 - @README.md: 프로젝트 설명 및 운영 가이드

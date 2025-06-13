@@ -4,5 +4,5 @@ appId: net.cj.cjhv.gs.tving
 # TestRail Case ID: 313766
 # https://tving.testrail.io/index.php?/cases/view/313766
 # (수동 변환 필요)
-- startRecording: "result/{{DATE}}/TC313766_사용자_인증_{{TIME}}"
-- stopRecording
+#- # startRecording: "result/{{DATE}}/TC313766_사용자_인증_{{TIME}}"
+#- stopRecording

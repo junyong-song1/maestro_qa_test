@@ -4,6 +4,6 @@ appId: net.cj.cjhv.gs.tving
 # TestRail Case ID: 313767
 # https://tving.testrail.io/index.php?/cases/view/313767
 # (수동 변환 필요)
-#- startRecording: "result/{{DATE}}/TC313767_로그인___TVING_ID_{{TIME}}"
+#- startRecording: "result/20250613/TC313767_로그인___TVING_ID_185658"
 - runFlow: "sub_flows/login_flow.yaml"
 #- stopRecording
