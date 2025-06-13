@@ -26,39 +26,60 @@ def run_maestro_realtime(cmd, devices, logs, live, render_args, t0, current_test
     output = []  # 전체 출력 저장
     shard_outputs = {i+1: [] for i in range(len(devices))}  # shard별 출력 저장
     
-    while True:
-        line = process.stdout.readline()
-        if not line:
-            break
-        output.append(line)
-        m = re.match(r'\[shard (\d+)\]', line)
-        if m:
-            shard_idx = int(m.group(1))
-            shard_outputs[shard_idx].append(line.rstrip())
-            if 0 <= shard_idx-1 < len(serials):
-                logs[serials[shard_idx-1]].append(line.rstrip())
-        else:
+    if len(devices) == 1:
+        # 단말기 1대: 모든 라인을 logs['ALL']에 append
+        while True:
+            line = process.stdout.readline()
+            if not line:
+                break
+            output.append(line)
             logs['ALL'].append(line.rstrip())
-        # 실행시간/진행률 실시간 갱신
-        current_test['elapsed'] = f"{time.time() - t0:.1f}s"
-        suites_status[0]['progress'] = f"{int(idx/total_cases*100)}%"
-        suites_status[0]['time'] = f"{current_test['elapsed']}"
-        live.update(render_dashboard(*render_args))
-    
-    process.stdout.close()
-    retcode = process.wait()
-    
-    # 결과 분석
-    full_output = ''.join(output)
-    shard_results = []
-    for shard_num in range(1, len(devices) + 1):
-        shard_output = ''.join(shard_outputs[shard_num])
-        if '[Passed]' in shard_output or 'Flow Passed' in shard_output:
-            shard_results.append((str(shard_num), 'Passed'))
+            # 실행시간/진행률 실시간 갱신
+            current_test['elapsed'] = f"{time.time() - t0:.1f}s"
+            suites_status[0]['progress'] = f"{int(idx/total_cases*100)}%"
+            suites_status[0]['time'] = f"{current_test['elapsed']}"
+            live.update(render_dashboard(*render_args))
+        process.stdout.close()
+        retcode = process.wait()
+        full_output = ''.join(output)
+        # 성공/실패 판정
+        if '[Passed]' in full_output or 'Flow Passed' in full_output:
+            shard_results = [("1", "Passed")]
         else:
-            shard_results.append((str(shard_num), 'Failed'))
-    
-    return retcode, shard_results, full_output
+            shard_results = [("1", "Failed")]
+        return retcode, shard_results, full_output
+    else:
+        # 기존 shard 패턴 파싱 로직
+        while True:
+            line = process.stdout.readline()
+            if not line:
+                break
+            output.append(line)
+            m = re.match(r'\[shard (\d+)\]', line)
+            if m:
+                shard_idx = int(m.group(1))
+                shard_outputs[shard_idx].append(line.rstrip())
+                if 0 <= shard_idx-1 < len(serials):
+                    logs[serials[shard_idx-1]].append(line.rstrip())
+            else:
+                logs['ALL'].append(line.rstrip())
+            # 실행시간/진행률 실시간 갱신
+            current_test['elapsed'] = f"{time.time() - t0:.1f}s"
+            suites_status[0]['progress'] = f"{int(idx/total_cases*100)}%"
+            suites_status[0]['time'] = f"{current_test['elapsed']}"
+            live.update(render_dashboard(*render_args))
+        process.stdout.close()
+        retcode = process.wait()
+        # 결과 분석
+        full_output = ''.join(output)
+        shard_results = []
+        for shard_num in range(1, len(devices) + 1):
+            shard_output = ''.join(shard_outputs[shard_num])
+            if '[Passed]' in shard_output or 'Flow Passed' in shard_output:
+                shard_results.append((str(shard_num), 'Passed'))
+            else:
+                shard_results.append((str(shard_num), 'Failed'))
+        return retcode, shard_results, full_output
 
 def main():
     config = load_config()
@@ -80,7 +101,7 @@ def main():
         testrail_cases = testrail_cases['cases']
     # 상태 변수 초기화
     logs = {serial: [] for serial in devices}
-    logs['ALL'] = [f"[INFO] {project_name} QA 자동화 테스트 시작 - {start_time}"]
+    logs['ALL'] = [f"[INFO] QA 자동화 테스트 시작 ({project_name}) - {start_time}"]
     suites_status = []
     for suite_name in ['전체']:
         suites_status.append({'name': suite_name, 'progress': '0%', 'status': '대기', 'time': '-'})
@@ -90,7 +111,11 @@ def main():
         model, os_version, build_id, _, serial = get_device_info_by_serial(serial)
         device_infos.append({'model': model, 'os_version': os_version, 'build': build_id, 'serial': serial})
     with Live(render_dashboard(project_name, start_time, suites_status, current_test, device_infos, logs), refresh_per_second=2, screen=True) as live:
-        # TC00000_앱시작 shard-all 실행
+        # TC00000_앱시작 실행 메시지 개선
+        if N == 1:
+            logs['ALL'].append(f"[INFO] 단말기 1대: TC00000_앱시작 실행 중...")
+        else:
+            logs['ALL'].append(f"[INFO] {N}대 단말기 shard-all로 TC00000_앱시작 실행 중...")
         app_start_yaml = None
         for f in glob.glob('maestro_flows/TC00000_앱시작*.yaml'):
             app_start_yaml = f
@@ -100,8 +125,10 @@ def main():
                 content = f.read()
             if '{{DATE}}' in content or '{{TIME}}' in content:
                 app_start_yaml = substitute_and_prepare_yaml(app_start_yaml)
-            cmd = ["maestro", "test", "--shard-all", str(N), app_start_yaml]
-            logs['ALL'].append(f"[INFO] shard-all로 TC00000_앱시작 실행 중...")
+            if N == 1:
+                cmd = ["maestro", "test", app_start_yaml]
+            else:
+                cmd = ["maestro", "test", "--shard-all", str(N), app_start_yaml]
             live.update(render_dashboard(project_name, start_time, suites_status, current_test, device_infos, logs))
             result = subprocess.run(cmd, capture_output=True, text=True)
             shard_results = re.findall(r'\[shard (\d+)\] \[(Passed|Failed)\]', result.stdout + result.stderr)
@@ -171,77 +198,20 @@ def main():
                 content = f.read()
             if '{{DATE}}' in content or '{{TIME}}' in content:
                 yaml_path = substitute_and_prepare_yaml(yaml_path)
-            cmd = ["maestro", "test", "--shard-all", str(N), yaml_path]
-            render_args = (project_name, start_time, suites_status, current_test, device_infos, logs)
-            retcode, shard_results, full_output = run_maestro_realtime(cmd, devices, logs, live, render_args, t0, current_test, suites_status, idx, total_cases)
-            
-            if retcode != 0 and not shard_results:  # 완전한 실패인 경우
-                logs['ALL'].append(f"[ERROR] TC{case_id}: Maestro shard-all 실행 실패. 오류코드: {retcode}")
+            if N == 1:
+                # 단말기 1대: returncode만으로 성공/실패 판정
+                cmd = ["maestro", "test", yaml_path]
+                result = subprocess.run(cmd, capture_output=True, text=True)
+                logs['ALL'].append(result.stdout)
+                logs['ALL'].append(result.stderr)
+                status = '성공' if result.returncode == 0 else '실패'
                 for serial in devices:
-                    logs[serial].append(f"[실패] TC{case_id}: Maestro shard-all 실행 실패. 오류코드: {retcode}")
-                    current_test['devices'][serial] = '실패'
-                suites_status[0]['progress'] = f"{int(idx/total_cases*100)}%"
-                suites_status[0]['status'] = '실행중'
-                live.update(render_dashboard(project_name, start_time, suites_status, current_test, device_infos, logs))
-                continue
-            print("devices:", devices)
-            print("shard_results:", shard_results)
-            today = datetime.now().strftime('%Y%m%d')
-            overall_status = 'pass'
-            for i, serial in enumerate(devices):
-                model, os_version, build_id, _, serial = get_device_info_by_serial(serial)
-                tving_version = get_tving_app_version(serial)
-                result_dir = os.path.join('result', serial, today)
-                os.makedirs(result_dir, exist_ok=True)
-                before_files = set(os.listdir(result_dir)) if os.path.exists(result_dir) else set()
-                
-                # 상태 판단 로직 개선
-                status = '실패'  # 기본값은 실패
-                
-                # 1. shard 결과 확인
-                for shard_num, res in shard_results:
-                    if int(shard_num) == i+1:
-                        status = '성공' if res == 'Passed' else '실패'
-                        break  # 명시적으로 break 추가
-                
-                # 2. 플레이어 TC인 경우 추가 검증
-                if 'player' in yaml_path.lower() or '플레이어' in yaml_path:
-                    logcat_path = collect_tving_logcat(serial)
-                    if os.path.exists(logcat_path):
-                        with open(logcat_path, 'r', encoding='utf-8') as f:
-                            logcat_content = f.read()
-                        player_status = analyze_playing_state(logcat_content, serial)
-                        if player_status == 'error':
-                            status = '실패'
-                            logs[serial].append(f"[실패] TC{case_id}: 플레이어 에러 발생")
-                        
-                        # ANR 상태 체크 추가
-                        is_anr, anr_log = check_anr_state(logcat_content)
-                        if is_anr:
-                            logs[serial].append(f"[경고] TC{case_id}: ANR 발생 - {anr_log}")
-                            # ANR이 발생했지만 앱이 살아있다면 경고만 표시
-                            if status == '성공':
-                                logs[serial].append(f"[정보] TC{case_id}: ANR이 발생했으나 테스트는 계속 진행됨")
-                
-                # 3. 결과 기록 및 첨부파일 처리
-                try:
-                    after_files = set(os.listdir(result_dir))
-                    new_files = after_files - before_files
-                    attachments = []
-                    
-                    # 로그캣 파일 첨부
-                    logcat_files = [f for f in new_files if 'logcat' in f.lower()]
-                    for log_file in logcat_files:
-                        log_path = os.path.join(result_dir, log_file)
-                        attachments.append(log_path)
-                    
-                    # 스크린샷 첨부
-                    screenshot_files = [f for f in new_files if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
-                    for img_file in screenshot_files:
-                        img_path = os.path.join(result_dir, img_file)
-                        attachments.append(img_path)
-                    
-                    # 테스트레일에 결과 업로드
+                    current_test['devices'][serial] = status
+                    logs[serial].append(f"[{status}] TC{case_id} 완료")
+                # TestRail 업로드
+                for serial in devices:
+                    model, os_version, build_id, _, serial = get_device_info_by_serial(serial)
+                    tving_version = get_tving_app_version(serial)
                     comment = f"""
 디바이스 정보:
 - 모델: {model}
@@ -252,26 +222,6 @@ def main():
 실행 결과: {status}
 """
                     result_id = add_result_for_case(tr_config, run_id, case_id, status.lower(), comment)
-                    
-                    # 첨부파일 업로드
-                    for attachment in attachments:
-                        try:
-                            add_attachment_to_result(tr_config, result_id, attachment)
-                        except Exception as e:
-                            logs[serial].append(f"[경고] TC{case_id}: 첨부파일 업로드 실패 - {attachment}")
-                            logs['ALL'].append(f"[경고] TC{case_id}: 첨부파일 업로드 실패 - {attachment}")
-                
-                except Exception as e:
-                    logs[serial].append(f"[경고] TC{case_id}: 테스트레일 결과 업로드 실패 - {str(e)}")
-                    logs['ALL'].append(f"[경고] TC{case_id}: 테스트레일 결과 업로드 실패 - {str(e)}")
-                
-                # 4. UI 업데이트
-                current_test['devices'][serial] = status
-                if status == '실패':
-                    overall_status = 'fail'
-                
-                # 5. 로그 업데이트
-                logs[serial].append(f"[{status}] TC{case_id} 완료")
                 elapsed = f"{time.time() - t0:.2f}s"
                 current_test['elapsed'] = elapsed
                 all_results.append({
@@ -288,15 +238,138 @@ def main():
                     'error_log': '',
                     'elapsed': elapsed
                 })
-            print("all_results:", all_results)
-            suites_status[0]['progress'] = f"{int(idx/total_cases*100)}%"
-            suites_status[0]['status'] = '실행중'
-            live.update(render_dashboard(project_name, start_time, suites_status, current_test, device_infos, logs))
-            # 플레이어 TC(313859, 313889) 실행 후 logcat/playing_check.txt 남기기
-            if str(case_id) in ['313859', '313889']:
-                for serial in devices:
-                    logcat_path = collect_tving_logcat(serial, duration=5)
-                    analyze_playing_state(logcat_path, serial)
+                suites_status[0]['progress'] = f"{int(idx/total_cases*100)}%"
+                suites_status[0]['status'] = '실행중'
+                live.update(render_dashboard(project_name, start_time, suites_status, current_test, device_infos, logs))
+                continue
+            else:
+                # 2대 이상: 기존 로직 유지
+                cmd = ["maestro", "test", "--shard-all", str(N), yaml_path]
+                render_args = (project_name, start_time, suites_status, current_test, device_infos, logs)
+                retcode, shard_results, full_output = run_maestro_realtime(cmd, devices, logs, live, render_args, t0, current_test, suites_status, idx, total_cases)
+                
+                if retcode != 0 and not shard_results:  # 완전한 실패인 경우
+                    logs['ALL'].append(f"[ERROR] TC{case_id}: Maestro shard-all 실행 실패. 오류코드: {retcode}")
+                    for serial in devices:
+                        logs[serial].append(f"[실패] TC{case_id}: Maestro shard-all 실행 실패. 오류코드: {retcode}")
+                        current_test['devices'][serial] = '실패'
+                    suites_status[0]['progress'] = f"{int(idx/total_cases*100)}%"
+                    suites_status[0]['status'] = '실행중'
+                    live.update(render_dashboard(project_name, start_time, suites_status, current_test, device_infos, logs))
+                    continue
+                print("devices:", devices)
+                print("shard_results:", shard_results)
+                today = datetime.now().strftime('%Y%m%d')
+                overall_status = 'pass'
+                for i, serial in enumerate(devices):
+                    model, os_version, build_id, _, serial = get_device_info_by_serial(serial)
+                    tving_version = get_tving_app_version(serial)
+                    result_dir = os.path.join('result', serial, today)
+                    os.makedirs(result_dir, exist_ok=True)
+                    before_files = set(os.listdir(result_dir)) if os.path.exists(result_dir) else set()
+                    
+                    # 상태 판단 로직 개선
+                    status = '실패'  # 기본값은 실패
+                    
+                    # 1. shard 결과 확인
+                    for shard_num, res in shard_results:
+                        if int(shard_num) == i+1:
+                            status = '성공' if res == 'Passed' else '실패'
+                            break  # 명시적으로 break 추가
+                    
+                    # 2. 플레이어 TC인 경우 추가 검증
+                    if 'player' in yaml_path.lower() or '플레이어' in yaml_path:
+                        logcat_path = collect_tving_logcat(serial)
+                        if os.path.exists(logcat_path):
+                            with open(logcat_path, 'r', encoding='utf-8') as f:
+                                logcat_content = f.read()
+                            player_status = analyze_playing_state(logcat_content, serial)
+                            if player_status == 'error':
+                                status = '실패'
+                                logs[serial].append(f"[실패] TC{case_id}: 플레이어 에러 발생")
+                            
+                            # ANR 상태 체크 추가
+                            is_anr, anr_log = check_anr_state(logcat_content)
+                            if is_anr:
+                                logs[serial].append(f"[경고] TC{case_id}: ANR 발생 - {anr_log}")
+                                # ANR이 발생했지만 앱이 살아있다면 경고만 표시
+                                if status == '성공':
+                                    logs[serial].append(f"[정보] TC{case_id}: ANR이 발생했으나 테스트는 계속 진행됨")
+                    
+                    # 3. 결과 기록 및 첨부파일 처리
+                    try:
+                        after_files = set(os.listdir(result_dir))
+                        new_files = after_files - before_files
+                        attachments = []
+                        
+                        # 로그캣 파일 첨부
+                        logcat_files = [f for f in new_files if 'logcat' in f.lower()]
+                        for log_file in logcat_files:
+                            log_path = os.path.join(result_dir, log_file)
+                            attachments.append(log_path)
+                        
+                        # 스크린샷 첨부
+                        screenshot_files = [f for f in new_files if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+                        for img_file in screenshot_files:
+                            img_path = os.path.join(result_dir, img_file)
+                            attachments.append(img_path)
+                        
+                        # 테스트레일에 결과 업로드
+                        comment = f"""
+디바이스 정보:
+- 모델: {model}
+- 안드로이드: {os_version}
+- 빌드: {build_id}
+- TVING 버전: {tving_version}
+
+실행 결과: {status}
+"""
+                        result_id = add_result_for_case(tr_config, run_id, case_id, status.lower(), comment)
+                        
+                        # 첨부파일 업로드
+                        for attachment in attachments:
+                            try:
+                                add_attachment_to_result(tr_config, result_id, attachment)
+                            except Exception as e:
+                                logs[serial].append(f"[경고] TC{case_id}: 첨부파일 업로드 실패 - {attachment}")
+                                logs['ALL'].append(f"[경고] TC{case_id}: 첨부파일 업로드 실패 - {attachment}")
+                    
+                    except Exception as e:
+                        logs[serial].append(f"[경고] TC{case_id}: 테스트레일 결과 업로드 실패 - {str(e)}")
+                        logs['ALL'].append(f"[경고] TC{case_id}: 테스트레일 결과 업로드 실패 - {str(e)}")
+                    
+                    # 4. UI 업데이트
+                    current_test['devices'][serial] = status
+                    if status == '실패':
+                        overall_status = 'fail'
+                    
+                    # 5. 로그 업데이트
+                    logs[serial].append(f"[{status}] TC{case_id} 완료")
+                    elapsed = f"{time.time() - t0:.2f}s"
+                    current_test['elapsed'] = elapsed
+                    all_results.append({
+                        'case_id': case_id,
+                        'title': title,
+                        'serial': serial,
+                        'model': model,
+                        'os_version': os_version,
+                        'build_id': build_id,
+                        'tving_version': tving_version,
+                        'status': 'pass' if status == '성공' else 'fail',
+                        'log_path': '',
+                        'attachments': [],
+                        'error_log': '',
+                        'elapsed': elapsed
+                    })
+                print("all_results:", all_results)
+                suites_status[0]['progress'] = f"{int(idx/total_cases*100)}%"
+                suites_status[0]['status'] = '실행중'
+                live.update(render_dashboard(project_name, start_time, suites_status, current_test, device_infos, logs))
+                # 플레이어 TC(313859, 313889) 실행 후 logcat/playing_check.txt 남기기
+                if str(case_id) in ['313859', '313889']:
+                    for serial in devices:
+                        logcat_path = collect_tving_logcat(serial, duration=5)
+                        analyze_playing_state(logcat_path, serial)
         suites_status[0]['progress'] = '100%'
         suites_status[0]['status'] = '완료'
         suites_status[0]['time'] = f"{datetime.now().strftime('%H:%M:%S')}"
@@ -316,8 +389,8 @@ def main():
                 # 로그 파일 첨부
                 for serial, results in case_results.items():
                     for r in results:
-                        if 'logcat_path' in r and os.path.exists(r['logcat_path']):
-                            add_attachment_to_result(tr_config, result_id, r['logcat_path'])
+                        if 'log_path' in r and os.path.exists(r['log_path']):
+                            add_attachment_to_result(tr_config, result_id, r['log_path'])
             else:
                 print("TestRail 결과 보고 실패")
         logs['ALL'].append("[INFO] 모든 케이스 결과/첨부 일괄 업로드 완료.")
