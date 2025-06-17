@@ -8,9 +8,8 @@ config.ini
 venv/
 __pycache__/
 
-# 로그/결과/임시파일
-logs/
-result/
+# 로그/결과/임시파일 (artifacts로 통합)
+artifacts/
 *.log
 *.tmp
 *.mp4

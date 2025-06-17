@@ -18,6 +18,18 @@ def substitute_and_prepare_yaml(flow_path):
     return tmp_path, date_str, time_str
 
 # Maestro 실행 래퍼 (shard-all 지원)
+def run_and_tee(cmd, log_path):
+    """stdout을 파일과 터미널에 동시에 출력"""
+    os.makedirs(os.path.dirname(log_path), exist_ok=True)  # 로그 폴더 자동 생성
+    with open(log_path, 'w', encoding='utf-8') as logfile:
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        for line in process.stdout:
+            print(line, end='')
+            logfile.write(line)
+            logfile.flush()
+        process.stdout.close()
+        return process.wait()
+
 def run_maestro(flow_path, device_serial=None, shard_all=False, log_path=None):
     cmd = ["maestro", "test"]
     if shard_all:
@@ -26,11 +38,11 @@ def run_maestro(flow_path, device_serial=None, shard_all=False, log_path=None):
         cmd += ["--device", device_serial]
     cmd.append(flow_path)
     if log_path:
-        with open(log_path, 'w', encoding='utf-8') as f:
-            result = subprocess.run(cmd, stdout=f, stderr=subprocess.STDOUT)
+        returncode = run_and_tee(cmd, log_path)
     else:
         result = subprocess.run(cmd)
-    return result.returncode
+        returncode = result.returncode
+    return returncode
 
 # Maestro 로그 결과 파싱 (성공/실패, 에러 메시지 등)
 def parse_maestro_result(log_path):

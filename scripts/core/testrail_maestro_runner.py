@@ -12,6 +12,7 @@ from multiprocessing import Process
 from rich.table import Table
 from rich.live import Live
 from rich.progress import Progress, BarColumn, TextColumn, TimeElapsedColumn
+import testrail.testrail_client as testrail_client
 
 # --- 단말기/OS 정보 자동 추출 ---
 def get_connected_devices():
@@ -47,57 +48,12 @@ def check_environment(serial):
     return True
 
 # --- TestRail API ---
-def get_testrail_cases(config, suite_id):
-    url = config['url'].rstrip('/')
-    project_id = config['project_id']
-    username = config['username']
-    api_key = config['api_key']
-    endpoint = f"{url}/index.php?/api/v2/get_cases/{project_id}&suite_id={suite_id}"
-    resp = requests.get(endpoint, auth=(username, api_key))
-    resp.raise_for_status()
-    return resp.json()
+# 기존 get_testrail_cases, add_result_for_case, add_attachment_to_result 함수 제거
 
-def add_result_for_case(config, run_id, case_id, status, comment):
-    """TestRail에 테스트 결과 추가"""
-    url = config['url'].rstrip('/')
-    username = config['username']
-    api_key = config['api_key']
-    endpoint = f"{url}/index.php?/api/v2/add_result_for_case/{run_id}/{case_id}"
-    
-    # 상태 매핑
-    status_map = {
-        '성공': 1,  # Passed
-        'pass': 1,
-        'OK': 1,
-        '실패': 5,  # Failed
-        'fail': 5,
-        'FAIL': 5
-    }
-    
-    status_id = status_map.get(status, 5)  # 기본값은 Failed(5)
-    data = {'status_id': status_id, 'comment': comment}
-    
-    try:
-        resp = requests.post(endpoint, json=data, auth=(username, api_key))
-        resp.raise_for_status()
-        return resp.json()['id']
-    except Exception as e:
-        print(f"TestRail 결과 보고 실패: {e}")
-        return None
-
-def add_attachment_to_result(config, result_id, filepath):
-    url = config['url'].rstrip('/')
-    username = config['username']
-    api_key = config['api_key']
-    endpoint = f"{url}/index.php?/api/v2/add_attachment_to_result/{result_id}"
-    with open(filepath, 'rb') as f:
-        files = {'attachment': (os.path.basename(filepath), f)}
-        try:
-            resp = requests.post(endpoint, files=files, auth=(username, api_key))
-            resp.raise_for_status()
-            print(f"[첨부 성공] {filepath}")
-        except Exception as e:
-            print(f"[첨부 실패] {filepath}: {e}")
+# 아래와 같이 testrail_client.py의 메소드로 대체
+# get_testrail_cases = testrail_client.get_cases (필요시)
+# add_result_for_case = testrail_client.add_result
+# add_attachment_to_result = testrail_client.add_attachment
 
 # --- Maestro 실행 및 결과 처리 ---
 def substitute_and_prepare_yaml(flow_path):
@@ -186,26 +142,23 @@ def find_maestro_flow(case_id):
         matches = [m for m in matches if '/sub_flows/' not in m and '\\sub_flows\\' not in m]
         all_matches.extend(matches)
     if not all_matches:
-        print(f"[매칭 실패] TC{case_id}에 해당하는 YAML 파일이 없습니다.")
+        print(f"{Colors.FAIL}✗ TC{case_id}: YAML 파일 없음{Colors.ENDC}")
         return None
     # 중복 제거 및 정렬 (최신 파일 우선)
     unique_matches = list(set(all_matches))
     unique_matches.sort(key=lambda x: os.path.getmtime(x), reverse=True)
     if len(unique_matches) > 1:
-        print(f"[중복 파일 경고] TC{case_id}: {len(unique_matches)}개 파일 발견, 최신 파일 선택: {unique_matches[0]}")
-        for i, f in enumerate(unique_matches):
-            print(f"  {i+1}. {f} (수정시간: {datetime.fromtimestamp(os.path.getmtime(f))})")
+        print(f"{Colors.WARNING}⚠ TC{case_id}: {len(unique_matches)}개 파일, 최신 선택{Colors.ENDC}")
     # 선택된 파일 YAML 검증
     selected_file = unique_matches[0]
     if not validate_yaml_file(selected_file):
-        print(f"[YAML 검증 실패] {selected_file} - 다음 파일 시도")
+        print(f"{Colors.FAIL}✗ TC{case_id}: YAML 검증 실패{Colors.ENDC}")
         for alternative in unique_matches[1:]:
             if validate_yaml_file(alternative):
-                print(f"[대체 파일 선택] {alternative}")
+                print(f"{Colors.OKGREEN}✓ TC{case_id}: 대체 파일 선택{Colors.ENDC}")
                 return alternative
-        print(f"[매칭 실패] TC{case_id} - 유효한 YAML 파일이 없습니다.")
         return None
-    print(f"[매칭 성공] TC{case_id} -> {selected_file}")
+    print(f"{Colors.OKGREEN}✓ TC{case_id}: 매칭 완료{Colors.ENDC}")
     return selected_file
 
 def find_latest_maestro_artifacts():
@@ -256,7 +209,7 @@ def analyze_playing_state(logcat_content, serial):
     
     # 단말기별로 playing_check.txt 저장
     today = datetime.now().strftime("%Y%m%d")
-    result_dir = f"result/{serial}/{today}"
+    result_dir = f"artifacts/result/{serial}/{today}"
     os.makedirs(result_dir, exist_ok=True)
     with open(f'{result_dir}/playing_check.txt', 'w') as f:
         f.write(result)
@@ -265,11 +218,11 @@ def analyze_playing_state(logcat_content, serial):
 def collect_tving_logcat(serial, duration=5):
     """TVING 앱의 logcat 수집"""
     config = configparser.ConfigParser()
-    config.read('config.ini')
+    config.read('config/config.ini')
     package_name = config['App']['package_name']
     
     today = datetime.now().strftime("%Y%m%d")
-    result_dir = f"result/{serial}/{today}"
+    result_dir = f"artifacts/result/{serial}/{today}"
     os.makedirs(result_dir, exist_ok=True)
     logcat_path = f"{result_dir}/tving_logcat.txt"
     
@@ -321,14 +274,14 @@ def run_tests_on_device(serial, cases):
     if not check_environment(serial):
         return
     config = configparser.ConfigParser()
-    config.read('config.ini')
+    config.read('config/config.ini')
     tr = config['TestRail']
     suite_id = tr.get('suite_id', '1787')
-    run_id = subprocess.check_output('python3 scripts/create_testrail_run.py --suite_id ' + suite_id, shell=True).decode().strip()
+    run_id = subprocess.check_output('python3 scripts/utils/create_testrail_run.py --suite_id ' + suite_id, shell=True).decode().strip()
     model, os_version, build_id, serial = get_device_info(serial)
     today = datetime.now().strftime('%Y%m%d')
-    os.makedirs(f'result/{serial}/{today}', exist_ok=True)
-    os.makedirs(f'logs/{serial}', exist_ok=True)
+    os.makedirs(f'artifacts/result/{serial}/{today}', exist_ok=True)
+    os.makedirs(f'artifacts/logs/{serial}', exist_ok=True)
     results = []
     # 1. TC00000_앱시작.yaml 먼저 실행
     app_start_yaml = None
@@ -344,7 +297,7 @@ def run_tests_on_device(serial, cases):
         status = 'fail'
         if '[Passed]' in result.stdout + result.stderr or result.returncode == 0:
             status = 'pass'
-        add_result_for_case(tr, run_id, '00000', status, f"[{'성공' if status == 'pass' else '실패'}] 단말기: {serial}")
+        testrail_client.add_result(tr, run_id, '00000', status, f"[{'성공' if status == 'pass' else '실패'}] 단말기: {serial}")
         if status == 'fail':
             print(f"[{serial}] [중단] 앱시작 실패. 이후 케이스 실행 중단.")
             return
@@ -367,7 +320,7 @@ def run_tests_on_device(serial, cases):
         status = 'fail'
         if '[Passed]' in result.stdout + result.stderr or result.returncode == 0:
             status = 'pass'
-        add_result_for_case(tr, run_id, case_id, status, f"[{'성공' if status == 'pass' else '실패'}] 단말기: {serial}")
+        testrail_client.add_result(tr, run_id, case_id, status, f"[{'성공' if status == 'pass' else '실패'}] 단말기: {serial}")
         if status == 'fail':
             print(f"[{serial}] [중단] TC{case_id} 실패. 이후 케이스 실행 중단.")
             return
@@ -435,7 +388,7 @@ def run_maestro_test(yaml_path, serial):
     
     # 결과 저장 디렉토리 생성
     today = datetime.now().strftime("%Y%m%d")
-    result_dir = f"result/{serial}/{today}"
+    result_dir = f"artifacts/result/{serial}/{today}"
     os.makedirs(result_dir, exist_ok=True)
     
     # 비디오 녹화 디렉토리 생성
@@ -532,7 +485,7 @@ def main(run_id=None):
     if run_id is None:
         print("[오류] run_id는 main.py에서 생성해 인자로 넘겨야 합니다.")
         return
-    testrail_cases = get_testrail_cases(tr, suite_id)
+    testrail_cases = testrail_client.get_cases(tr, suite_id)
     if isinstance(testrail_cases, dict) and 'cases' in testrail_cases:
         testrail_cases = testrail_cases['cases']
 
@@ -737,9 +690,9 @@ def main(run_id=None):
                     attachments.extend(r['attachments'])
                     overall_status = 'fail'
             comment = '\n'.join(comment_lines)
-            result_id = add_result_for_case(tr, run_id, case_id, overall_status, comment)
+            result_id = testrail_client.add_result(tr, run_id, case_id, overall_status, comment)
             for filepath in attachments:
-                add_attachment_to_result(tr, result_id, filepath)
+                testrail_client.add_attachment(tr, result_id, filepath)
         print("[INFO] 모든 케이스 결과/첨부 일괄 업로드 완료.")
 
 if __name__ == '__main__':

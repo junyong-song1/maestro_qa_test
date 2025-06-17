@@ -7,8 +7,8 @@
 ## 설치 방법
 
 ```bash
-git clone https://github.com/your-org/qa_auto_test_project.git
-cd qa_auto_test_project
+git clone https://github.com/junyong-song1/maestro_qa_test.git
+cd maestro_qa_test
 bash install_and_run.sh
 ```
 

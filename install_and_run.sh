@@ -14,10 +14,10 @@ echo "Maestro: https://maestro.mobile.dev/getting-started/"
 echo "adb: Android SDK Platform Tools 설치 필요"
 
 echo "설정 파일(config.ini) 작성 여부 확인"
-if [ ! -f config.ini ]; then
-  echo "config.ini 파일이 없습니다. config.ini.example을 복사해서 config.ini를 만드세요."
+if [ ! -f config/config.ini ]; then
+  echo "config/config.ini 파일이 없습니다. config/config.ini.example을 복사해서 config/config.ini를 만드세요."
   exit 1
 fi
 
 echo "테스트 실행"
-python3 scripts/main.py
+python3 scripts/core/main.py
