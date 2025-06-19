@@ -1,0 +1,192 @@
+{% extends "qa_monitor/base.html" %}
+{% load static %}
+
+{% block title %}QA 자동화 대시보드{% endblock %}
+{% block page_title %}QA 자동화 대시보드{% endblock %}
+{% block page_subtitle %}테스트 실행 현황 및 결과 분석{% endblock %}
+
+{% block content %}
+<div class="px-2 sm:px-6 lg:px-12 py-8 max-w-screen-xl mx-auto w-full">
+
+    <!-- 상단: 시스템/단말기 상태 + TestRail 상태별 필터 버튼 -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
+      <!-- 왼쪽: 시스템/단말기 상태 뱃지 -->
+      <div class="flex flex-wrap gap-2">
+        <span class="inline-flex items-center px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold">
+          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-width="2" stroke="currentColor"/></svg>
+          TestRail 연동
+        </span>
+        <span class="inline-flex items-center px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold">
+          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-width="2" stroke="currentColor"/></svg>
+          Test Runner
+        </span>
+        <span class="inline-flex items-center px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold">
+          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-width="2" stroke="currentColor"/></svg>
+          DB 연결
+        </span>
+        {% if device_connected %}
+        <span class="inline-flex items-center px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold">
+          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="2" stroke="currentColor" fill="none"/><path d="M9 12h6" stroke-width="2" stroke="currentColor"/></svg>
+          단말기 연결됨
+        </span>
+        {% else %}
+        <span class="inline-flex items-center px-3 py-1 rounded-full bg-gray-200 text-gray-600 text-xs font-semibold">
+          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="2" stroke="currentColor" fill="none"/><path d="M9 12h6" stroke-width="2" stroke="currentColor"/></svg>
+          단말기 미연결
+        </span>
+        {% endif %}
+      </div>
+      <!-- 오른쪽: TestRail 상태별 필터 버튼 (뱃지와 동일한 크기) -->
+      <div class="flex flex-wrap gap-2" id="status-filter-group">
+        <button type="button" class="status-filter-btn bg-green-100 text-green-700 text-xs font-semibold flex items-center px-3 py-1 rounded-full transition hover:bg-green-200" data-status="Passed">
+          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-width="2" stroke="currentColor"/></svg>
+          Passed
+        </button>
+        <button type="button" class="status-filter-btn bg-red-100 text-red-700 text-xs font-semibold flex items-center px-3 py-1 rounded-full transition hover:bg-red-200" data-status="Failed">
+          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2" stroke="currentColor"/></svg>
+          Failed
+        </button>
+        <button type="button" class="status-filter-btn bg-gray-200 text-gray-700 text-xs font-semibold flex items-center px-3 py-1 rounded-full transition hover:bg-gray-300" data-status="Blocked">
+          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" stroke-width="2" stroke="currentColor" fill="none"/></svg>
+          Blocked
+        </button>
+        <button type="button" class="status-filter-btn bg-blue-100 text-blue-700 text-xs font-semibold flex items-center px-3 py-1 rounded-full transition hover:bg-blue-200" data-status="Untested">
+          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="2" stroke="currentColor" fill="none"/><path d="M12 8v4l3 3" stroke-width="2" stroke="currentColor"/></svg>
+          Untested
+        </button>
+        <button type="button" class="status-filter-btn bg-yellow-100 text-yellow-700 text-xs font-semibold flex items-center px-3 py-1 rounded-full transition hover:bg-yellow-200" data-status="Retest">
+          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-width="2" stroke="currentColor" fill="none"/></svg>
+          Retest
+        </button>
+        <button type="button" class="status-filter-btn border border-blue-400 text-blue-700 text-xs font-semibold flex items-center px-3 py-1 rounded-full transition hover:bg-blue-50" data-status="All">
+          전체 보기
+        </button>
+      </div>
+    </div>
+
+    <!-- 최근 실행 이력 테이블 -->
+    <div class="bg-white rounded-xl shadow p-8 mb-10">
+        <h2 class="text-xl font-bold mb-4">최근 실행 이력</h2>
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">테스트명</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상태</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">실행시간</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for run in recent_runs %}
+                <tr data-status="{{ run.status }}" class="hover:bg-blue-50 transition cursor-pointer" onclick='window.location.href="{% url "qa_monitor:testcase_detail" run.case_id %}"'>
+                    <td class="px-6 py-4 font-semibold text-blue-600">
+                        <a href="{% url 'qa_monitor:testrun_detail' run.id %}" class="underline hover:text-blue-800">{{ run.name }}</a>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="px-2 py-1 rounded-full text-xs font-semibold
+                            {% if run.status == 'Passed' %} bg-green-100 text-green-700
+                            {% elif run.status == 'Failed' %} bg-red-100 text-red-700
+                            {% elif run.status == 'Blocked' %} bg-gray-200 text-gray-700
+                            {% elif run.status == 'Untested' %} bg-blue-100 text-blue-700
+                            {% elif run.status == 'Retest' %} bg-yellow-100 text-yellow-700
+                            {% else %} bg-gray-100 text-gray-700 {% endif %}">
+                            {{ run.status }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">{{ run.time }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3" class="px-6 py-4 text-center text-gray-400">실행 이력이 없습니다.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 상태별 진행률 바 (TestRail 순서) -->
+    {% with total=status_counts.Passed|add:status_counts.Failed|add:status_counts.Blocked|add:status_counts.Untested|add:status_counts.Retest %}
+        {% widthratio status_counts.Passed total 100 as passed_rate %}
+        {% widthratio status_counts.Failed total 100 as failed_rate %}
+        {% widthratio status_counts.Blocked total 100 as blocked_rate %}
+        {% widthratio status_counts.Untested total 100 as untested_rate %}
+        {% widthratio status_counts.Retest total 100 as retest_rate %}
+    <div class="bg-white rounded-xl shadow p-8 mb-10">
+        <h2 class="text-xl font-bold">상태별 통계 <span class="text-sm text-gray-500">(최근 테스트케이스 기준)</span></h2>
+        <div class="mb-6">
+            <div class="flex items-center mb-2">
+                <span class="text-gray-700 font-semibold mr-2">Passed</span>
+                <span class="text-green-600 font-bold">{{ status_counts.Passed }}</span>
+                <span class="ml-auto text-gray-400 text-sm">{{ passed_rate }}%</span>
+            </div>
+            <div class="w-full h-3 bg-gray-200 rounded">
+                <div class="h-3 bg-green-500 rounded" style="width:{{ passed_rate }}%"></div>
+            </div>
+        </div>
+        <div class="mb-6">
+            <div class="flex items-center mb-2">
+                <span class="text-gray-700 font-semibold mr-2">Failed</span>
+                <span class="text-red-600 font-bold">{{ status_counts.Failed }}</span>
+                <span class="ml-auto text-gray-400 text-sm">{{ failed_rate }}%</span>
+            </div>
+            <div class="w-full h-3 bg-gray-200 rounded">
+                <div class="h-3 bg-red-500 rounded" style="width:{{ failed_rate }}%"></div>
+            </div>
+        </div>
+        <div class="mb-6">
+            <div class="flex items-center mb-2">
+                <span class="text-gray-700 font-semibold mr-2">Blocked</span>
+                <span class="text-gray-600 font-bold">{{ status_counts.Blocked }}</span>
+                <span class="ml-auto text-gray-400 text-sm">{{ blocked_rate }}%</span>
+            </div>
+            <div class="w-full h-3 bg-gray-200 rounded">
+                <div class="h-3 bg-gray-500 rounded" style="width:{{ blocked_rate }}%"></div>
+            </div>
+        </div>
+        <div class="mb-6">
+            <div class="flex items-center mb-2">
+                <span class="text-gray-700 font-semibold mr-2">Untested</span>
+                <span class="text-blue-600 font-bold">{{ status_counts.Untested }}</span>
+                <span class="ml-auto text-gray-400 text-sm">{{ untested_rate }}%</span>
+            </div>
+            <div class="w-full h-3 bg-gray-200 rounded">
+                <div class="h-3 bg-blue-500 rounded" style="width:{{ untested_rate }}%"></div>
+            </div>
+        </div>
+        <div>
+            <div class="flex items-center mb-2">
+                <span class="text-gray-700 font-semibold mr-2">Retest</span>
+                <span class="text-yellow-600 font-bold">{{ status_counts.Retest }}</span>
+                <span class="ml-auto text-gray-400 text-sm">{{ retest_rate }}%</span>
+            </div>
+            <div class="w-full h-3 bg-gray-200 rounded">
+                <div class="h-3 bg-yellow-400 rounded" style="width:{{ retest_rate }}%"></div>
+            </div>
+        </div>
+    </div>
+    {% endwith %}
+</div>
+
+<!-- 필터링 JS -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const filterBtns = document.querySelectorAll('.status-filter-btn');
+    const rows = document.querySelectorAll('#run-table tbody tr[data-status]');
+    filterBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const status = btn.getAttribute('data-status');
+            filterBtns.forEach(b => b.classList.remove('ring-2', 'ring-offset-2', 'ring-blue-400'));
+            btn.classList.add('ring-2', 'ring-offset-2', 'ring-blue-400');
+            rows.forEach(row => {
+                if (status === 'All' || row.getAttribute('data-status') === status) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    });
+    // 기본 전체 보기 활성화
+    document.querySelector('.status-filter-btn[data-status="All"]').click();
+});
+</script>
+{% endblock %}

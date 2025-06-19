@@ -1,0 +1,120 @@
+{% extends "qa_monitor/base.html" %}
+{% block title %}{{ run_name }} 상세{% endblock %}
+{% block content %}
+<div class="w-full py-8 px-4">
+  <h2 class="text-2xl font-bold mb-8 text-center">{{ run_name }}</h2>
+  {% if testcases %}
+  <!-- 스크롤 안내 -->
+  <div class="text-xs text-gray-400 text-center mb-2">← 좌우로 스크롤하여 전체 테스트케이스를 확인하세요 →</div>
+  <!-- 카드형 테스트케이스 리스트 -->
+  <div class="overflow-x-scroll max-w-full mb-8 scrollbar-thin scrollbar-thumb-gray-300">
+    <div id="case-card-list" class="flex gap-4 min-w-[1200px] w-max">
+      {% for case in testcases %}
+      <div class="case-card cursor-pointer flex-shrink-0 w-44 bg-white rounded-xl shadow-md border-2 border-transparent hover:border-blue-400 transition p-4 flex flex-col items-center"
+           data-case-id="{{ case.id }}" data-title="{{ case.title }}" data-status="{{ case.status }}" data-description="{{ case.description|default:'' }}" data-comments="{{ case.comments|join:'\n\n' }}">
+        <div class="w-12 h-12 flex flex-col items-center justify-center gap-1 rounded-full text-white text-xl font-bold mb-2
+          {% if case.status == 'passed' %} bg-green-500
+          {% elif case.status == 'failed' %} bg-red-500
+          {% elif case.status == 'blocked' %} bg-gray-400
+          {% elif case.status == 'retest' %} bg-yellow-400
+          {% else %} bg-blue-200 text-gray-700
+          {% endif %}">
+          <span class="text-lg font-bold">{{ forloop.counter }}</span>
+          <span>
+            {% if case.status == 'passed' %}
+              <svg class="w-5 h-5 inline-block" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+            {% elif case.status == 'failed' %}
+              <svg class="w-5 h-5 inline-block" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            {% elif case.status == 'blocked' %}
+              <svg class="w-5 h-5 inline-block" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" /></svg>
+            {% elif case.status == 'retest' %}
+              <svg class="w-5 h-5 inline-block" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+            {% else %}
+              <svg class="w-5 h-5 inline-block" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" /></svg>
+            {% endif %}
+          </span>
+        </div>
+        <div class="text-center font-semibold text-sm mb-1">{{ case.title }}</div>
+        <span class="inline-block px-2 py-0.5 rounded text-xs font-semibold mt-1
+          {% if case.status == 'passed' %} bg-green-100 text-green-800
+          {% elif case.status == 'failed' %} bg-red-100 text-red-800
+          {% elif case.status == 'blocked' %} bg-gray-200 text-gray-700
+          {% elif case.status == 'retest' %} bg-yellow-100 text-yellow-800
+          {% else %} bg-blue-100 text-blue-700
+          {% endif %}">
+          {{ case.status|title }}
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  <!-- 하단 상세 결과 영역 -->
+  <div id="case-detail-panel" class="max-w-4xl w-full mx-auto bg-gray-50 rounded-xl shadow p-6 border border-gray-200">
+    <div id="case-detail-title" class="text-lg font-bold mb-2">{{ testcases.0.title }}</div>
+    <div id="case-detail-status" class="mb-2">
+      <span class="inline-block px-2 py-0.5 rounded text-xs font-semibold
+        {% if testcases.0.status == 'passed' %} bg-green-100 text-green-800
+        {% elif testcases.0.status == 'failed' %} bg-red-100 text-red-800
+        {% elif testcases.0.status == 'blocked' %} bg-gray-200 text-gray-700
+        {% elif testcases.0.status == 'retest' %} bg-yellow-100 text-yellow-800
+        {% else %} bg-blue-100 text-blue-700
+        {% endif %}">
+        {{ testcases.0.status|title }}
+      </span>
+    </div>
+    <div id="case-detail-desc" class="text-gray-700 text-sm">
+      {% if testcases.0.description %}
+        {{ testcases.0.description }}
+      {% elif testcases.0.comments and testcases.0.comments|length > 0 %}
+        {% for c in testcases.0.comments %}
+          <div class="mb-2 whitespace-pre-line">{{ c }}</div>
+        {% endfor %}
+      {% else %}
+        설명이 없습니다.
+      {% endif %}
+    </div>
+  </div>
+  <script>
+    // 카드 클릭 시 상세 결과 갱신
+    document.querySelectorAll('.case-card').forEach(function(card) {
+      card.addEventListener('click', function() {
+        // 모든 카드 테두리 초기화
+        document.querySelectorAll('.case-card').forEach(function(c) {
+          c.classList.remove('border-blue-500');
+          c.classList.add('border-transparent');
+        });
+        // 활성 카드 강조
+        card.classList.remove('border-transparent');
+        card.classList.add('border-blue-500');
+        // 상세 영역 갱신
+        document.getElementById('case-detail-title').textContent = card.dataset.title;
+        document.getElementById('case-detail-status').innerHTML = '<span class="inline-block px-2 py-0.5 rounded text-xs font-semibold ' +
+          (card.dataset.status === 'passed' ? 'bg-green-100 text-green-800' :
+           card.dataset.status === 'failed' ? 'bg-red-100 text-red-800' :
+           card.dataset.status === 'blocked' ? 'bg-gray-200 text-gray-700' :
+           card.dataset.status === 'retest' ? 'bg-yellow-100 text-yellow-800' :
+           'bg-blue-100 text-blue-700') +
+          '">' + card.dataset.status.charAt(0).toUpperCase() + card.dataset.status.slice(1) + '</span>';
+        // description, comments 순서로 표시
+        var desc = card.dataset.description;
+        var comments = card.dataset.comments ? card.dataset.comments.split('\n\n') : [];
+        var descDiv = document.getElementById('case-detail-desc');
+        if (desc) {
+          descDiv.textContent = desc;
+        } else if (comments.length > 0 && comments[0]) {
+          descDiv.innerHTML = comments.map(function(c) {
+            return '<div class="mb-2 whitespace-pre-line">' + c.replace(/\n/g, '<br>') + '</div>';
+          }).join('');
+        } else {
+          descDiv.textContent = '설명이 없습니다.';
+        }
+      });
+    });
+    // 첫 번째 카드 활성화
+    document.querySelectorAll('.case-card')[0]?.classList.add('border-blue-500');
+  </script>
+  {% else %}
+    <div class="text-gray-400">테스트케이스가 없습니다.</div>
+  {% endif %}
+</div>
+{% endblock %} 

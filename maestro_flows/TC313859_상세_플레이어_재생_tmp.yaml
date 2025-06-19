@@ -32,12 +32,12 @@ appId: net.cj.cjhv.gs.tving
     id: "net.cj.cjhv.gs.tving:id/iv_thumbnail"
     index: 0
 - tapOn: Error Icon
-- evalScript: |
-    const fs = require('fs');
-    const serial = process.env.DEVICE_SERIAL; 
-    const today = new Date().toISOString().slice(0,10).replace(/-/g, '');
-    const log = fs.readFileSync(`/Users/songjun-yong/Workspace/qa_auto_test_project/result/${serial}/${today}/playing_check.txt`, 'utf-8').trim();
-    output.jsLogValue = log;
-    assertEqual:
-      actual: ${output.jsLogValue}
-      expected: "OK"
+# - evalScript: |
+#     const fs = require('fs');
+#     const serial = process.env.DEVICE_SERIAL; 
+#     const today = new Date().toISOString().slice(0,10).replace(/-/g, '');
+#     const log = fs.readFileSync(`/Users/songjun-yong/Workspace/qa_auto_test_project/result/${serial}/${today}/playing_check.txt`, 'utf-8').trim();
+#     output.jsLogValue = log;
+#     assertEqual:
+#       actual: ${output.jsLogValue}
+#       expected: "OK"

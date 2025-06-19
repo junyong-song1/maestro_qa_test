@@ -18,7 +18,7 @@ appId: net.cj.cjhv.gs.tving
         text: "뒤로 가기"
     commands:
       - tapOn:
-          id: "net.cj.cjhv.gs.tving:id/player_container"
+          id: "net.cj.cjhv.gs.tving:id/surface_view"
       - tapOn: "일시정지"
 
 # 뒤로 가기 버튼이 보이면 바로 클릭
@@ -38,7 +38,7 @@ appId: net.cj.cjhv.gs.tving
         text: ".*뒤로.*"
     commands:
       - tapOn:
-          id: "net.cj.cjhv.gs.tving:id/player_container"
+          id: "net.cj.cjhv.gs.tving:id/surface_view"
       - tapOn: "일시정지"
       - tapOn:
           text: ".*뒤로.*"

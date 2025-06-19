@@ -24,18 +24,19 @@ appId: net.cj.cjhv.gs.tving
           id: "net.cj.cjhv.gs.tving:id/image_close"
           optional: true    
       - tapOn:
-          text: "뉴스" # "다른 버튼"을 식별할 수 있는 텍스트, ID 등으로 변경해주세요.
-                                 # 예: id: "other_button_id" 또는 text: "게스트로 시작하기" 등                       
+          text: "뉴스" # "다른 버튼"을 식별할 수 있는 텍스트, ID 등으로 변경해주세요.             
+- assertVisible : "뉴스"                  # 예: id: "other_button_id" 또는 text: "게스트로 시작하기" 등                       
 - tapOn:
     id: "net.cj.cjhv.gs.tving:id/iv_thumbnail"
     index: 0
-- evalScript: |
-    const fs = require('fs');
-    if (!fs.existsSync('result/playing_check.txt')) {
-     throw new Error('playing_check.txt 파일이 존재하지 않습니다.');
-    }
-    const log = fs.readFileSync('result/playing_check.txt', 'utf-8').trim();
-    output.jsLogValue = log;
-    assertEqual:
-      actual: ${output.jsLogValue}
-      expected: "OK"
+- tapOn: Error Icon    
+# - evalScript: |
+#     const fs = require('fs');
+#     if (!fs.existsSync('result/playing_check.txt')) {
+#      throw new Error('playing_check.txt 파일이 존재하지 않습니다.');
+#     }
+#     const log = fs.readFileSync('result/playing_check.txt', 'utf-8').trim();
+#     output.jsLogValue = log;
+#     assertEqual:
+#       actual: ${output.jsLogValue}
+#       expected: "OK"

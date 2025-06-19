@@ -1,0 +1,36 @@
+{% extends "qa_monitor/base.html" %}
+{% block title %}{{ testcase.title }} 상세{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto py-8">
+  <h2 class="text-2xl font-bold mb-4">테스트케이스 {{ testcase.id }} - {{ testcase.title }}</h2>
+  <div class="mb-2"><span class="font-semibold">설명:</span> {{ testcase.description }}</div>
+  <div class="mb-2"><span class="font-semibold">단계:</span> {{ testcase.custom_steps|default:"-" }}</div>
+  <div class="mb-2"><span class="font-semibold">예상결과:</span> {{ testcase.custom_expected|default:"-" }}</div>
+
+  <hr class="my-6">
+
+  <h3 class="text-lg font-bold mb-2">최근 실행 이력</h3>
+  {% if recent_tests %}
+    <table class="min-w-full divide-y divide-gray-200 mb-4">
+      <thead>
+        <tr>
+          <th class="px-4 py-2 text-left">테스트런</th>
+          <th class="px-4 py-2 text-left">상태</th>
+          <th class="px-4 py-2 text-left">실행시간</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in recent_tests %}
+        <tr>
+          <td class="px-4 py-2">{{ t.run_name }}</td>
+          <td class="px-4 py-2">{{ t.status }}</td>
+          <td class="px-4 py-2">{{ t.time }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="text-gray-400">실행 이력이 없습니다.</div>
+  {% endif %}
+</div>
+{% endblock %} 

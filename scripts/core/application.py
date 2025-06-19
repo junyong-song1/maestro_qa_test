@@ -10,17 +10,25 @@ from .test_runner import MaestroTestRunner, TestResult
 class QAApplication:
     def __init__(self):
         self.config = ConfigManager()
-        self.logger = get_logger("QAApplication")
+        # api_key 사용 (password가 아님)
+        testrail_config = {
+            'url': self.config['TestRail']['url'],
+            'username': self.config['TestRail']['username'],
+            'api_key': self.config['TestRail']['api_key'],  # password → api_key로 수정
+            'project_id': self.config['TestRail']['project_id']
+        }
+        self.testrail_manager = TestRailManager(testrail_config)
         self.device_manager = DeviceManager()
-        self.testrail_manager = TestRailManager(self.config.testrail)
-        self.test_runner = MaestroTestRunner(self.config)
+        # testrail_manager를 전달
+        self.test_runner = MaestroTestRunner(self.config, self.testrail_manager)
+        self.logger = get_logger("QAApplication")
     
     def run(self):
-        """메인 애플리케이션 실행"""
+        """QA 애플리케이션 실행"""
         try:
             self.logger.info("QA 자동화 테스트 시작")
             
-            # 1. 디바이스 발견
+            # 디바이스 발견
             devices = self.device_manager.discover_devices()
             if not devices:
                 self.logger.error("연결된 디바이스가 없습니다.")
@@ -28,25 +36,24 @@ class QAApplication:
             
             self.logger.info(f"{len(devices)}개 디바이스 발견")
             
-            # 2. TestRail 런 생성
-            suite_id = self.config.get_testrail('suite_id', '1787')
-            test_run = self.testrail_manager.create_test_run(suite_id)
-            self.logger.info(f"TestRail 런 생성: {test_run.id}")
-            
-            # 3. 테스트 케이스 조회
+            # TestRail에서 테스트 케이스 가져오기
+            # get_testrail 대신 get 사용
+            suite_id = self.config.get('TestRail', 'suite_id', '1787')
             test_cases = self.testrail_manager.get_cases_by_suite(suite_id)
+            
+            if not test_cases:
+                self.logger.error("테스트 케이스를 찾을 수 없습니다.")
+                return
+            
             self.logger.info(f"{len(test_cases)}개 테스트 케이스 조회")
             
-            # 4. 테스트 실행
+            # 테스트 실행
             results = self.test_runner.run_tests(test_cases, devices)
             
-            # 5. 결과 업로드
-            self._upload_results(test_run.id, results)
-            
-            self.logger.info("QA 자동화 테스트 완료")
+            self.logger.info(f"테스트 완료: {len(results)}개 결과")
             
         except Exception as e:
-            self.logger.error(f"테스트 실행 중 오류 발생: {e}")
+            self.logger.error(f"테스트 실행 중 오류 발생: {str(e)}")
             raise
     
     def _upload_results(self, run_id: str, results: List[TestResult]):

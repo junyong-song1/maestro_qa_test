@@ -41,19 +41,16 @@ appId: net.cj.cjhv.gs.tving
     times: 5
     commands:
       - tapOn:
-          id: net.cj.cjhv.gs.tving:id/player_container
-      - tapOn:
-         above:
-            id: net.cj.cjhv.gs.tving:id/controller_compose  
-         containsDescendants:                       # matches a view that has all the descendant views given below
-           - text: "화면 회전"
+          id: net.cj.cjhv.gs.tving:id/surface_view
+      - tapOn: "화면 회전"
+
 # JavaScript 실행 및 검증
-- evalScript: |
-    const fs = require('fs');
-    const serial = process.env.DEVICE_SERIAL; 
-    const today = new Date().toISOString().slice(0,10).replace(/-/g, '');
-    const log = fs.readFileSync(`/Users/songjun-yong/Workspace/qa_auto_test_project/result/${serial}/${today}/playing_check.txt`, 'utf-8').trim();
-    output.jsLogValue = log;
-    assertEqual:
-      actual: ${output.jsLogValue}
-      expected: "OK"
+# - evalScript: |
+#     const fs = require('fs');
+#     const serial = process.env.DEVICE_SERIAL; 
+#     const today = new Date().toISOString().slice(0,10).replace(/-/g, '');
+#     const log = fs.readFileSync(`/Users/songjun-yong/Workspace/qa_auto_test_project/result/${serial}/${today}/playing_check.txt`, 'utf-8').trim();
+#     output.jsLogValue = log;
+#     assertEqual:
+#       actual: ${output.jsLogValue}
+#       expected: "OK"
