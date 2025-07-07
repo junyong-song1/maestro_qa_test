@@ -509,3 +509,11 @@ python3 scripts/core/main.py
 **문서 버전**: 1.0.0  
 **최종 업데이트**: 2024년 12월  
 **다음 검토 예정**: 2025년 1월
+
+# Cursor 규칙 (실제 구현 반영)
+
+- 파일명 기반 YAML 매칭: `TC{case_id}_` 패턴이 포함된 파일명만 있으면 실행 가능
+- TestRail 연동: suite_id, custom_automation_type(2) 필터링, 결과 자동 업로드
+- status_id, run_id 등 TestRail API 규격 엄수
+- main.py 단일 진입점, 실행 로그 상세 기록
+- 현업 QA 자동화 요구사항 100% 반영

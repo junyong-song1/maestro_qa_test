@@ -9,11 +9,14 @@ import os
 import logging
 import sys
 from datetime import datetime
-import frontmatter  # python-frontmatter 라이브러리 임포트
+try:
+    import frontmatter  # python-frontmatter 라이브러리 임포트
+except ImportError:
+    frontmatter = None  # linter 오류 방지용, 실제 실행환경에서는 설치 필요
 
 from ..device.device_manager import DeviceInfo
 from ..utils.logger import get_logger
-from ..testrail.testrail_manager import TestRailManager
+from ..testrail import testrail
 
 # 로거 설정 (testrail_maestro_runner.py와 동일한 방식)
 logger = logging.getLogger("TestRunner")
@@ -80,15 +83,14 @@ class MaestroTestRunner(TestRunner):
         
         # TestRail Manager 설정
         if testrail_manager:
-            self.testrail_manager = testrail_manager
+            self.testrail_config = testrail_manager  # dict 형태로 전달 가능
         else:
-            testrail_config = {
+            self.testrail_config = {
                 'url': config_manager.get('TestRail', 'url'),
                 'username': config_manager.get('TestRail', 'username'),
                 'api_key': config_manager.get('TestRail', 'api_key'),
                 'project_id': config_manager.get('TestRail', 'project_id')
             }
-            self.testrail_manager = TestRailManager(testrail_config)
             
         # Maestro 플로우 탐색
         self._discover_maestro_flows()
@@ -96,24 +98,24 @@ class MaestroTestRunner(TestRunner):
     def _discover_maestro_flows(self):
         """maestro_flows 폴더를 스캔하여 모든 테스트 플로우 정보를 로드"""
         self.maestro_flows = []
-        flow_dir = Path("maestro_flows")
+        flow_dir = Path("maestro_flows/qa_flows")
         if not flow_dir.is_dir():
             self.logger.warning(f"'{flow_dir}' 디렉토리를 찾을 수 없습니다.")
             return
 
         for yaml_path in flow_dir.glob("**/*.yaml"):
             try:
-                with open(yaml_path, 'r', encoding='utf-8') as f:
-                    post = frontmatter.load(f)
-                    # 필수 메타데이터 검증 (예: appId)
-                    if 'appId' in post.metadata:
+                if frontmatter is not None:
+                    with open(yaml_path, 'r', encoding='utf-8') as f:
+                        post = frontmatter.load(f)
+                        # appId 유무와 관계없이 모든 yaml을 실행 대상으로 포함
                         self.maestro_flows.append(TestFlow(
                             path=yaml_path,
                             metadata=post.metadata,
                             content=post.content
                         ))
-                    else:
-                        self.logger.warning(f"메타데이터 누락: {yaml_path} 파일에 'appId'가 필요합니다.")
+                else:
+                    self.logger.warning(f"frontmatter 모듈이 없어 {yaml_path} 파일을 파싱하지 못했습니다.")
             except Exception as e:
                 self.logger.error(f"{yaml_path} 파일을 파싱하는 중 오류 발생: {e}")
         
@@ -125,23 +127,21 @@ class MaestroTestRunner(TestRunner):
         self.results = []
         
         try:
-            # 테스트 시작 시 하나의 테스트 런 생성
+            # TestRail에 테스트런 생성
             suite_id = self.config.get('TestRail', 'suite_id', '1798')
-            test_run = self.testrail_manager.create_test_run(
-                suite_id=suite_id,
-                name=f"자동화 테스트 - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-            )
-            self.current_run_id = test_run.id
+            run_name = f"자동화 테스트 - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+            self.current_run_id = testrail.add_run(self.testrail_config, suite_id, name=run_name)
             logger.info(f"테스트 런 생성 완료 (Run ID: {self.current_run_id})")
-            
-            # 1. 앱 시작 테스트 실행 (TestRail 업로드 제외)
-            app_results = self._run_app_start_test()
+
+            # suite_id가 1784일 때만 앱 시작 테스트 실행
+            if str(suite_id) == '1784':
+                app_results = self._run_app_start_test()
             
             # 2. 각 테스트 케이스 실행 및 즉시 업로드
             for test_case in test_cases:
                 case_results = self._run_single_test(test_case)
                 if case_results:
-                    self._upload_results_to_testrail(case_results, test_case.title)
+                    self._upload_results_to_testrail(case_results, test_case['title'])
             
             return self.results
             
@@ -171,8 +171,8 @@ class MaestroTestRunner(TestRunner):
     
     def _run_single_test(self, test_case) -> List[TestResult]:
         """단일 테스트 케이스 실행 - 결과 반환"""
-        case_id = int(test_case.id)
-        title = test_case.title
+        case_id = int(test_case['id'])
+        title = test_case['title']
         
         logger.info(f"테스트 실행: {title} (ID: {case_id})")
         
@@ -199,13 +199,12 @@ class MaestroTestRunner(TestRunner):
         log_dir.mkdir(parents=True, exist_ok=True)
         log_path = log_dir / f"maestro_TC{case_id}.log"
         
-        # Maestro 명령 실행 (stdin으로 content 전달)
-        cmd = ["maestro", f"--device={device.serial}", "test", "-"]
+        # Maestro 명령 실행 (YAML 파일 경로 직접 전달)
+        cmd = ["maestro", f"--device={device.serial}", "test", str(test_flow.path)]
         logger.info(f"[{device.serial}] [테스트 실행] {' '.join(cmd)}")
         
         try:
-            # subprocess.run의 input 인자로 테스트 내용을 전달
-            result = subprocess.run(cmd, input=test_flow.content, capture_output=True, text=True, timeout=300, encoding='utf-8')
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=300, encoding='utf-8')
             
             # 상세 로그 출력 (testrail_maestro_runner.py와 동일)
             logger.info(f"[{device.serial}] stdout:\n{result.stdout}")
@@ -280,10 +279,17 @@ class MaestroTestRunner(TestRunner):
         return None
     
     def _find_maestro_flow(self, case_id: int) -> Optional[TestFlow]:
-        """Maestro 플로우 YAML 파일 찾기 (메타데이터 기반)"""
+        """Maestro 플로우 YAML 파일 찾기 (파일명 우선, 없으면 메타데이터)"""
+        # 1. 파일명에 TC{case_id}_ 패턴이 포함된 파일 우선 매칭
+        case_id_str = str(case_id)
+        for flow in self.maestro_flows:
+            if f"TC{case_id_str}_" in flow.path.name:
+                self.logger.info(f"[파일명매칭] Maestro 플로우 찾음: (ID: {case_id}) -> {flow.path}")
+                return flow
+        # 2. (백업) 메타데이터 기반 매칭
         for flow in self.maestro_flows:
             if flow.metadata.get("testrail_case_id") == case_id:
-                self.logger.info(f"Maestro 플로우 찾음: (ID: {case_id}) -> {flow.path}")
+                self.logger.info(f"[메타데이터] Maestro 플로우 찾음: (ID: {case_id}) -> {flow.path}")
                 return flow
         return None
     
@@ -326,12 +332,21 @@ class MaestroTestRunner(TestRunner):
                 if result.status == "실패":
                     attachments.extend(result.attachments)
             
+            # TestRail status_id 매핑
+            status_map = {
+                "성공": 1,  # Passed
+                "실패": 5,  # Failed
+                # 필요시 추가
+            }
+            status_id = status_map.get(overall_status, 3)  # 기본값: Untested(3)
+
             # TestRail에 통합 결과 업로드
-            result_id = self.testrail_manager.add_result(
-                run_id=self.current_run_id,
-                case_id=results[0].case_id,  # 모든 결과의 case_id는 동일
-                status=overall_status,
-                comment="\n\n".join(comment_lines)
+            result_id = testrail.add_result_for_case(
+                self.testrail_config,
+                self.current_run_id,
+                results[0].case_id,
+                status_id,
+                "\n\n".join(comment_lines)
             )
             
             # 실패한 경우에만 첨부파일 업로드
@@ -339,7 +354,7 @@ class MaestroTestRunner(TestRunner):
                 logger.info(f"실패 케이스 첨부파일 업로드 시작: {len(attachments)}개")
                 for attachment in attachments:
                     if os.path.exists(attachment):
-                        success = self.testrail_manager.add_attachment(result_id, attachment)
+                        success = testrail.add_attachment_to_result(self.testrail_config, result_id, attachment)
                         if success:
                             logger.info(f"첨부파일 업로드 성공: {attachment}")
                         else:

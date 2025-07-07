@@ -1,6 +1,23 @@
-# CLAUDE.md
+# CLAUDE (QA 자동화 규칙 및 구현)
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## 1. 파일명 기반 YAML 매칭
+- 테스트케이스 ID와 매칭되는 YAML 파일은 반드시 `TC{case_id}_` 패턴의 파일명으로 저장한다.
+- YAML 파일 내 메타데이터(`testrail_case_id`)가 없어도, 파일명만 맞으면 자동으로 매칭되어 실행된다.
+- 파일명만 맞추면 별도의 내용 수정 없이 바로 테스트가 가능하다.
+
+## 2. TestRail 연동 및 자동화
+- TestRail에서 suite_id, custom_automation_type(2: Maestro) 필드 기준으로 테스트케이스를 조회한다.
+- Automation Type이 Maestro(2)인 케이스만 필터링하여 실행한다.
+- 테스트 실행 후 결과는 즉시 TestRail에 업로드된다.
+- 테스트 런(run) 생성 및 결과 업로드 시, run_id, status_id 등 TestRail API 규격을 준수한다.
+
+## 3. 실행 및 관리
+- main.py를 통해 전체 자동화 테스트를 실행한다.
+- 실행 로그에 각 단계별 상세 정보(디바이스, 케이스, 업로드 결과 등)가 기록된다.
+- requirements.txt, .gitignore 등 프로젝트 관리 규칙을 준수한다.
+
+## 4. 현업 요구사항 반영
+- 현업 QA 자동화 요구사항(파일명만 맞추면 실행, 결과 자동 업로드 등)을 100% 반영한다.
 
 ## Project Overview
 

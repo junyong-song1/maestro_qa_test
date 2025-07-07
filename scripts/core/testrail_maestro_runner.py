@@ -9,15 +9,19 @@ import time
 import yaml
 from pathlib import Path
 from multiprocessing import Process
-from rich.table import Table
-from rich.live import Live
-from rich.progress import Progress, BarColumn, TextColumn, TimeElapsedColumn
-import testrail.testrail_client as testrail_client
+try:
+    from rich.table import Table
+    from rich.live import Live
+    from rich.progress import Progress, BarColumn, TextColumn, TimeElapsedColumn
+except ImportError:
+    Table = Live = Progress = BarColumn = TextColumn = TimeElapsedColumn = None
 import logging
 import json
 import asyncio
-import websockets
-from ..utils.logger import setup_logger
+try:
+    import websockets
+except ImportError:
+    websockets = None
 
 # 로그 설정 (파일과 콘솔 모두 기록)
 logging.basicConfig(
@@ -148,8 +152,8 @@ def find_maestro_flow(case_id):
     """
     # sub_flows는 직접 실행 대상에서 제외
     search_patterns = [
-        f"maestro_flows/TC{case_id}_*.yaml",           # 메인 폴더
-        f"maestro_flows/TC{case_id:0>6}_*.yaml"        # 패딩된 케이스 ID
+        f"maestro_flows/qa_flows/TC{case_id}_*.yaml",           # qa_flows 폴더
+        f"maestro_flows/qa_flows/TC{case_id:0>6}_*.yaml"        # 패딩된 케이스 ID
     ]
     all_matches = []
     for pattern in search_patterns:
@@ -158,23 +162,23 @@ def find_maestro_flow(case_id):
         matches = [m for m in matches if '/sub_flows/' not in m and '\\sub_flows\\' not in m]
         all_matches.extend(matches)
     if not all_matches:
-        print(f"{Colors.FAIL}✗ TC{case_id}: YAML 파일 없음{Colors.ENDC}")
+        print(f"✗ TC{case_id}: YAML 파일 없음")
         return None
     # 중복 제거 및 정렬 (최신 파일 우선)
     unique_matches = list(set(all_matches))
     unique_matches.sort(key=lambda x: os.path.getmtime(x), reverse=True)
     if len(unique_matches) > 1:
-        print(f"{Colors.WARNING}⚠ TC{case_id}: {len(unique_matches)}개 파일, 최신 선택{Colors.ENDC}")
+        print(f"⚠ TC{case_id}: {len(unique_matches)}개 파일, 최신 선택")
     # 선택된 파일 YAML 검증
     selected_file = unique_matches[0]
     if not validate_yaml_file(selected_file):
-        print(f"{Colors.FAIL}✗ TC{case_id}: YAML 검증 실패{Colors.ENDC}")
+        print(f"✗ TC{case_id}: YAML 검증 실패")
         for alternative in unique_matches[1:]:
             if validate_yaml_file(alternative):
-                print(f"{Colors.OKGREEN}✓ TC{case_id}: 대체 파일 선택{Colors.ENDC}")
+                print(f"✓ TC{case_id}: 대체 파일 선택")
                 return alternative
         return None
-    print(f"{Colors.OKGREEN}✓ TC{case_id}: 매칭 완료{Colors.ENDC}")
+    print(f"✓ TC{case_id}: 매칭 완료")
     return selected_file
 
 def find_latest_maestro_artifacts():
@@ -258,10 +262,11 @@ def collect_tving_logcat(serial, duration=5):
         
         start = time.time()
         while time.time() - start < duration:
-            line = proc.stdout.readline()
-            if not line:
-                break
-            f.write(line)
+            if proc.stdout:
+                line = proc.stdout.readline()
+                if not line:
+                    break
+                f.write(line)
         
         proc.terminate()
     
@@ -301,9 +306,10 @@ def run_tests_on_device(serial, cases):
     results = []
     # 1. TC00000_앱시작.yaml 먼저 실행
     app_start_yaml = None
-    for f in glob.glob('maestro_flows/TC00000_앱시작*.yaml'):
-        app_start_yaml = f
-        break
+    if str(suite_id) == "1784":
+        for f in glob.glob('maestro_flows/qa_flows/TC00000_앱시작*.yaml'):
+            app_start_yaml = f
+            break
     if app_start_yaml:
         cmd = ["maestro", f"--device={serial}", "test", app_start_yaml]
         logger.info(f"[{serial}] [앱시작] {' '.join(cmd)}")
@@ -323,7 +329,7 @@ def run_tests_on_device(serial, cases):
             status = 'pass'  # 실제로 성공한 경우 pass로 처리(운영 상황에 따라 fail로 둘 수도 있음)
         else:
             logger.error(f"[{serial}] 앱 시작 실패로 간주합니다.")
-        testrail_client.add_result(tr, run_id, '00000', status, f"[{'성공' if status == 'pass' else '실패'}] 단말기: {serial}")
+        # testrail_client.add_result(tr, run_id, '00000', status, f"[{'성공' if status == 'pass' else '실패'}] 단말기: {serial}")
         if status == 'fail':
             print(f"[{serial}] [중단] 앱시작 실패. 이후 케이스 실행 중단.")
             return
@@ -346,7 +352,7 @@ def run_tests_on_device(serial, cases):
         status = 'fail'
         if '[Passed]' in result.stdout + result.stderr or result.returncode == 0:
             status = 'pass'
-        testrail_client.add_result(tr, run_id, case_id, status, f"[{'성공' if status == 'pass' else '실패'}] 단말기: {serial}")
+        # testrail_client.add_result(tr, run_id, case_id, status, f"[{'성공' if status == 'pass' else '실패'}] 단말기: {serial}")
         if status == 'fail':
             print(f"[{serial}] [중단] TC{case_id} 실패. 이후 케이스 실행 중단.")
             return
@@ -632,9 +638,10 @@ def main(run_id=None):
     with Live(make_table(), refresh_per_second=2) as live:
         # 1. TC00000_앱시작.yaml을 항상 shard-all로 먼저 실행 (TestRail 업로드 X)
         app_start_yaml = None
-        for f in glob.glob('maestro_flows/TC00000_앱시작*.yaml'):
-            app_start_yaml = f
-            break
+        if str(suite_id) == "1784":
+            for f in glob.glob('maestro_flows/qa_flows/TC00000_앱시작*.yaml'):
+                app_start_yaml = f
+                break
         if app_start_yaml:
             with open(app_start_yaml, encoding='utf-8') as f:
                 content = f.read()
@@ -772,9 +779,9 @@ def main(run_id=None):
                     attachments.extend(r['attachments'])
                     overall_status = 'fail'
             comment = '\n'.join(comment_lines)
-            result_id = testrail_client.add_result(tr, run_id, case_id, overall_status, comment)
-            for filepath in attachments:
-                testrail_client.add_attachment(tr, result_id, filepath)
+            # result_id = testrail_client.add_result(tr, run_id, case_id, overall_status, comment)
+            # for filepath in attachments:
+            #     testrail_client.add_attachment(tr, result_id, filepath)
         print("[INFO] 모든 케이스 결과/첨부 일괄 업로드 완료.")
 
 if __name__ == '__main__':

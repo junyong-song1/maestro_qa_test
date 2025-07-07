@@ -139,4 +139,24 @@ def add_attachment_to_result(config, result_id, filepath):
     if resp.status_code != 200:
         print(f"[ERROR] 첨부 실패: {resp.status_code}: {resp.text}", file=sys.stderr)
         return False
-    return True 
+    return True
+
+def add_run(config, suite_id, name=None, description=None):
+    """
+    TestRail에 테스트 런을 생성하고 run_id를 반환합니다.
+    """
+    url = config['url'].rstrip('/')
+    project_id = config['project_id']
+    username = config['username']
+    api_key = config['api_key']
+    endpoint = f"{url}/index.php?/api/v2/add_run/{project_id}"
+    data = {"suite_id": suite_id}
+    if name:
+        data["name"] = name
+    if description:
+        data["description"] = description
+    resp = requests.post(endpoint, json=data, auth=(username, api_key))
+    if resp.status_code != 200:
+        print(f"[ERROR] add_run {resp.status_code}: {resp.text}", file=sys.stderr)
+        return None
+    return resp.json().get('id') 

@@ -1,139 +1,62 @@
----
-description: 
-globs: 
-alwaysApply: false
----
----
-description: |
-  QA 자동화 테스트 프로젝트의 클래스 기반 구조 및 주요 파일 역할을 설명합니다.
-globs:
-  - scripts/config/*
-  - scripts/core/*
-  - scripts/device/*
-  - scripts/testrail/*
-  - scripts/utils/*
-  - config/*
-  - maestro_flows/**
-  - artifacts/**
-  - README.md
-  - install_and_run.sh
-  - requirements.txt
-  - .gitignore
-  - .vscode/settings.json
-  - CLAUDE.md
-  - config.ini.example
-  - config.ini
-  - .cursor/project-structure.mdc
-alwaysApply: false
----
-# Project Structure Guide (클래스 기반 구조)
+# Project Structure Guide (최신 QA 자동화 구조)
 
 ## 📁 Core Structure
 
 ### scripts/config/
-- **config_manager.py**: 설정 관리 중앙화 (싱글톤 패턴)
-  - TestRail, App 설정 통합 관리
-  - 설정 파일 경로 자동 감지
-  - 타입 안전한 설정 접근
+- **config_manager.py**: 설정 관리 싱글톤, TestRail/App 설정 통합
 
 ### scripts/core/
-- **application.py**: 메인 애플리케이션 클래스
-  - 전체 테스트 워크플로우 오케스트레이션
-  - 디바이스, TestRail, 테스트 러너 통합 관리
-- **test_runner.py**: 테스트 실행 엔진
-  - MaestroTestRunner: Maestro 기반 테스트 실행
-  - TestResult: 테스트 결과 데이터 클래스
-- **main.py**: 진입점 (새로운 구조)
-- **testrail_maestro_runner.py**: 기존 레거시 코드 (점진적 마이그레이션)
+- **application.py**: QAApplication 메인 클래스, 전체 워크플로우 오케스트레이션
+- **test_runner.py**: MaestroTestRunner(테스트 실행), TestResult(결과 데이터)
+- **main.py**: 단일 진입점
+- **testrail_maestro_runner.py**: 레거시 코드(점진적 마이그레이션)
 
 ### scripts/device/
-- **device_manager.py**: 디바이스 관리 클래스
-  - DeviceInfo: 디바이스 정보 데이터 클래스
-  - ADB 연결 및 디바이스 정보 수집
-  - 환경 체크 및 TVING 앱 버전 조회
+- **device_manager.py**: DeviceInfo(데이터), 디바이스 관리/ADB/환경 체크
 
 ### scripts/testrail/
-- **testrail_manager.py**: TestRail API 관리 클래스
-  - TestCase, TestRun: 데이터 클래스
-  - 테스트 런 생성, 케이스 조회, 결과 업로드
-  - 첨부파일 관리
-- **testrail_client.py**: 기존 TestRail 클라이언트 (호환성)
-- **testrail.py**: 기존 TestRail 유틸리티 (호환성)
+- **testrail.py**: TestRail API 유틸리티(런 생성, 케이스 조회, 결과 업로드)
 
 ### scripts/utils/
-- **logger.py**: 구조화된 로깅 시스템
-  - ColoredFormatter: 터미널 색상 지원
-  - TestLogger: 전용 로거 클래스
+- **logger.py**: 구조화/색상 지원 로깅, TestLogger
 - **maestro_runner.py**: Maestro 실행 유틸리티
-- **device_utils.py**: 기존 디바이스 유틸리티 (호환성)
-- **create_testrail_run.py**: TestRail 런 생성 스크립트
-- **clean_*.py**: 정리 유틸리티들
-- **save_tving_log.py**: TVING 로그 수집
+- **기타**: 정리, 로그, 디바이스 유틸리티 등
 
 ## 📁 Configuration & Data
 
 ### config/
-- **config.ini**: 실제 환경설정 (민감정보 포함, git 제외)
-- **config.ini.example**: 설정 예시 파일
+- **config.ini**: 실제 환경설정(민감정보, git 제외)
+- **config.ini.example**: 예시
 
 ### maestro_flows/
-- **TC*.yaml**: Maestro 테스트 플로우 파일들
-- **sub_flows/**: 공통 플로우 모듈
-- **TC00000_앱시작.yaml**: 앱 초기화 플로우
+- **TC*.yaml**: Maestro 테스트 플로우 (파일명 기반 매칭)
+- **sub_flows/**: 공통 플로우
 
 ### artifacts/
-- **logs/**: 단말기별 로그 디렉토리
-  - **{serial}/**: 단말기별 로그 폴더
-  - **maestro_TC*.log**: Maestro 실행 로그
-- **result/**: 테스트 결과 및 첨부파일
-  - **{serial}/{YYYYMMDD}/**: 단말기/날짜별 결과
-  - ***.mp4**: 테스트 녹화 영상
-  - ***.png**: 스크린샷
-  - ***.txt**: 로그캣 및 기타 로그
+- **logs/**: 단말기별 로그
+- **result/**: 테스트 결과/첨부파일
 
-## 🚀 Execution Flow
+## 🚀 Execution Flow (실제 동작)
 
 1. **main.py** → **QAApplication.run()**
-2. **DeviceManager.discover_devices()** → 디바이스 발견
-3. **TestRailManager.create_test_run()** → TestRail 런 생성
-4. **TestRailManager.get_cases_by_suite()** → 테스트 케이스 조회
-5. **MaestroTestRunner.run_tests()** → 테스트 실행
-6. **TestRailManager.add_result()** → 결과 업로드
+2. **DeviceManager.discover_devices()** → 디바이스 탐색
+3. **TestRail API**로 suite_id, custom_automation_type(2: Maestro) 필터링 케이스 조회
+4. **MaestroTestRunner.run_tests()**: 파일명(`TC{case_id}_`) 기반 YAML 매칭, 테스트 실행
+5. **TestRail API**로 결과(run_id, status_id 등) 자동 업로드
 
-## 🔧 Key Features
+## 🔑 Key Features (실제 구현 반영)
+- **파일명 기반 YAML 매칭**: `TC{case_id}_` 패턴만 맞으면 YAML 내용 수정 없이 실행
+- **TestRail 연동**: suite_id, custom_automation_type(2) 필터, 결과 자동 업로드
+- **API 규격 준수**: run_id, status_id 등 TestRail 규격 엄수
+- **main.py 단일 진입점, 실행 로그 상세 기록**
+- **현업 QA 자동화 요구 100% 반영**
 
-### 클래스 기반 아키텍처
-- **단일 책임 원칙**: 각 클래스가 명확한 역할
-- **의존성 주입**: 설정, 로거 등 외부 의존성 주입
-- **타입 힌트**: 모든 함수/메서드에 타입 정보
-- **에러 처리**: 체계적인 예외 처리
-
-### 설정 관리
-- **중앙화**: ConfigManager 싱글톤으로 통합 관리
-- **타입 안전**: 설정 접근 시 타입 검증
-- **환경 분리**: 개발/운영 환경 설정 분리
-
-### 로깅 시스템
-- **구조화**: 일관된 로그 포맷
-- **색상 지원**: 터미널에서 가독성 향상
-- **레벨별 출력**: DEBUG/INFO/WARNING/ERROR 구분
-
-### TestRail 연동
-- **클래스 기반**: TestRailManager로 API 관리
-- **데이터 클래스**: TestCase, TestRun 등 명확한 데이터 구조
-- **에러 처리**: API 호출 실패 시 적절한 처리
-
-## 📋 Migration Notes
-
-- 기존 코드와 새로운 구조가 병행 운영
-- 점진적 마이그레이션으로 안정성 확보
-- 호환성을 위한 기존 파일들 유지
-- 새로운 기능은 클래스 기반 구조로 개발
-
-## 🛠 Development Guidelines
-
-1. **새 기능 추가**: 해당 도메인의 클래스에 메서드 추가
-2. **설정 변경**: ConfigManager를 통해서만 접근
-3. **로깅**: TestLogger 사용으로 일관된 로그 출력
-4. **에러 처리**: 적절한 예외 처리 및 로깅
-5. **타입 힌트**: 모든 함수/메서드에 타입 정보 추가
+## 🛠 개발 가이드
+- 새 기능은 클래스 기반 구조로 추가
+- 설정은 ConfigManager로만 접근
+- 로깅은 TestLogger 사용
+- 타입 힌트, 예외 처리, 일관된 구조 유지
+description:
+globs:
+alwaysApply: false
+---

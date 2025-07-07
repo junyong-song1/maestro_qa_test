@@ -3,24 +3,21 @@ from pathlib import Path
 
 from ..config.config_manager import ConfigManager
 from ..device.device_manager import DeviceManager
-from ..testrail.testrail_manager import TestRailManager
+from ..testrail import testrail
 from ..utils.logger import get_logger
 from .test_runner import MaestroTestRunner, TestResult
 
 class QAApplication:
     def __init__(self):
         self.config = ConfigManager()
-        # api_key 사용 (password가 아님)
-        testrail_config = {
+        self.testrail_config = {
             'url': self.config['TestRail']['url'],
             'username': self.config['TestRail']['username'],
-            'api_key': self.config['TestRail']['api_key'],  # password → api_key로 수정
+            'api_key': self.config['TestRail']['api_key'],
             'project_id': self.config['TestRail']['project_id']
         }
-        self.testrail_manager = TestRailManager(testrail_config)
         self.device_manager = DeviceManager()
-        # testrail_manager를 전달
-        self.test_runner = MaestroTestRunner(self.config, self.testrail_manager)
+        self.test_runner = MaestroTestRunner(self.config)
         self.logger = get_logger("QAApplication")
     
     def run(self):
@@ -37,9 +34,10 @@ class QAApplication:
             self.logger.info(f"{len(devices)}개 디바이스 발견")
             
             # TestRail에서 테스트 케이스 가져오기
-            # get_testrail 대신 get 사용
             suite_id = self.config.get('TestRail', 'suite_id', '1798')
-            test_cases = self.testrail_manager.get_cases_by_suite(suite_id)
+            test_cases = testrail.get_cases_by_suite(self.testrail_config, suite_id)
+            if not isinstance(test_cases, list):
+                test_cases = []
             
             if not test_cases:
                 self.logger.error("테스트 케이스를 찾을 수 없습니다.")
@@ -47,8 +45,16 @@ class QAApplication:
             
             self.logger.info(f"{len(test_cases)}개 테스트 케이스 조회")
             
+            # 각 테스트케이스의 key와 Automation Type 로그 출력
+            for case in test_cases:
+                self.logger.info(f"TestCase keys: {list(case.keys())}, AutomationType: {case.get('custom_automation_type')}")
+            
+            # Automation Type이 2(Maestro)인 케이스만 필터링
+            maestro_cases = [case for case in test_cases if case.get('custom_automation_type') == 2]
+            self.logger.info(f"Automation Type=2(Maestro) 케이스만 실행: {len(maestro_cases)}개")
+
             # 테스트 실행
-            results = self.test_runner.run_tests(test_cases, devices)
+            results = self.test_runner.run_tests(maestro_cases, devices)
             
             self.logger.info(f"테스트 완료: {len(results)}개 결과")
             
@@ -60,15 +66,13 @@ class QAApplication:
         """테스트 결과를 TestRail에 업로드"""
         for result in results:
             comment = self._format_result_comment(result)
-            result_id = self.testrail_manager.add_result(
-                run_id, result.case_id, result.status, comment
-            )
+            result_id = testrail.add_result_for_case(self.testrail_config, run_id, result.case_id, result.status, comment)
             
             if result_id:
                 # 첨부파일 업로드
                 for attachment in result.attachments:
                     if Path(attachment).exists():
-                        self.testrail_manager.add_attachment(result_id, attachment)
+                        testrail.add_attachment_to_result(self.testrail_config, result_id, attachment)
     
     def _format_result_comment(self, result: TestResult) -> str:
         """결과 코멘트 포맷팅"""
