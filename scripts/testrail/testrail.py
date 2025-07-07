@@ -1,5 +1,63 @@
 import requests
+from typing import List, Dict, Optional
 import sys
+
+class TestRailAPI:
+    def __init__(self, url: str, email: str, password: str):
+        self.url = url.rstrip('/')
+        self.auth = (email, password)
+        self.headers = {'Content-Type': 'application/json'}
+
+    def _send_request(self, method: str, endpoint: str, **kwargs) -> Optional[Dict]:
+        api_url = f"{self.url}/index.php?/api/v2/{endpoint}"
+        try:
+            response = requests.request(method, api_url, headers=self.headers, auth=self.auth, **kwargs)
+            response.raise_for_status()
+            # GET 요청에 대한 응답이 비어있을 수 있음 (e.g. 204 No Content)
+            if response.status_code == 204:
+                return {}
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            print(f"API Error: {e}", file=sys.stderr)
+            return None
+        except ValueError: # JSON 디코딩 에러
+            print(f"API Error: Invalid JSON response from {api_url}", file=sys.stderr)
+            return None
+
+    def get_case(self, case_id: int) -> Optional[Dict]:
+        """특정 테스트 케이스의 상세 정보를 가져옵니다."""
+        return self._send_request('GET', f'get_case/{case_id}')
+
+    def get_cases(self, project_id: int, suite_id: int) -> Optional[List[Dict]]:
+        """
+        특정 스위트의 모든 테스트 케이스 목록을 가져옵니다.
+        TestRail의 기본 케이스 템플릿(steps 포함)을 명시적으로 요청합니다.
+        """
+        endpoint = f'get_cases/{project_id}&suite_id={suite_id}'
+        response = self._send_request('GET', endpoint)
+        return response.get('cases', []) if response else None
+
+class TestRailManager:
+    """TestRail API를 편리하게 사용하기 위한 관리자 클래스"""
+    def __init__(self, config: dict):
+        self.client = TestRailAPI(
+            url=config['url'],
+            email=config['username'],
+            password=config['api_key']
+        )
+        self.project_id = int(config['project_id'])
+
+    def get_case(self, case_id: int) -> Optional[Dict]:
+        """ID로 단일 테스트 케이스의 상세 정보를 가져옵니다."""
+        return self.client.get_case(case_id)
+
+    def get_test_cases(self, project_id: int, suite_id: int) -> Optional[List[Dict]]:
+        """특정 프로젝트와 스위트의 모든 테스트 케이스 목록을 가져옵니다."""
+        cases = self.client.get_cases(project_id, suite_id)
+        if cases is None:
+            print("테스트 케이스를 가져오는데 실패했습니다. API 응답을 확인하세요.", file=sys.stderr)
+            return None
+        return cases
 
 def get_all_suites(config):
     url = config['url'].rstrip('/')

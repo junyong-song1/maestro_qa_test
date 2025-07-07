@@ -1,7 +1,15 @@
+---
 appId: net.cj.cjhv.gs.tving
+name: "앱 시작 및 로그인 화면 진입"
+description: "앱을 실행하고, 초기 화면에서 '티빙 로그인' 버튼을 눌러 로그인 선택 화면으로 이동하는지 검증합니다."
+tags: ["시작", "smoke", "P0"]
+author: "junyong.song"
+testrail_case_id: 0
 ---
 #- startRecording: "result/{{DATE}}/TC00000_앱시작_{{TIME}}"
-- launchApp
+- launchApp:
+    appId: "net.cj.cjhv.gs.tving"
+    clearState: true
 - tapOn: "티빙 로그인"
-- assertVisible : "TVING ID로 시작하기"
+- assertVisible: "TVING ID로 시작하기"
 #- stopRecording

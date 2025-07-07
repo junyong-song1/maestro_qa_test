@@ -1,0 +1,55 @@
+appId: net.cj.cjhv.gs.tving
+#프로필 4개 미만 생성 상태
+#마이티빙 > "프로필 추가" 버튼 선택
+#프로필 만들기 화면 진입
+#프로필 옵션 설정 후, 추가 확인
+#프로필 추가 가능함
+#ㆍ 추가 시 설정한 옵션에 맞춰 생성됨 (이미지, 이름, 잠금설정)
+---
+- launchApp:
+    appId: "net.cj.cjhv.gs.tving"
+    clearState: true
+    clearKeychain: true   # optional: clear *entire* iOS keychain
+    stopApp: false # optional (true by default): stop the app before launching it
+    permissions: { all: allowed } # optional: by default all permissions are allowed,
+                               # even if clearState: true is passed
+- tapOn:
+    id: "com.android.permissioncontroller:id/permission_allow_button"
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/btn_accept"
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/btn_close"
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/text_confirm"
+- tapOn: "티빙 로그인" 
+- tapOn: "TVING ID로 시작하기"
+- tapOn: "아이디"
+- inputText:
+    text: "t_principle4"
+- tapOn:
+    text: "비밀번호"
+- inputText:
+    text: "1q2w3e4r5t"
+- tapOn: "로그인하기"
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/image_thumbnail"
+    index: 0
+- tapOn: #기술지원 팝업 Close Button
+    text: "15156557"
+    optional: true
+- tapOn: #다운로드 메뉴의 위치 변경 안내 팝업 Close Button
+    id: "net.cj.cjhv.gs.tving:id/iv_cancel"
+    optional: true
+
+
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/imageMyProfile"
+- tapOn: 프로필 전환 
+- assertVisible:
+    id: "net.cj.cjhv.gs.tving:id/image_add"
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/image_add"    
+- tapOn: "프로필 이름을 입력해주세요."
+- inputText: "QATest"
+- tapOn: "확인"
+

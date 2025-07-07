@@ -1,0 +1,52 @@
+appId: net.cj.cjhv.gs.tving
+#로그인 수단 선택 화면 > TVING ID 로그인 가능 확인
+#로그인 후 홈화면 진입 가능함
+---
+- launchApp:
+    appId: "net.cj.cjhv.gs.tving"
+    clearState: true
+    clearKeychain: true   # optional: clear *entire* iOS keychain
+    stopApp: false # optional (true by default): stop the app before launching it
+    permissions: { all: allowed } # optional: by default all permissions are allowed,
+                               # even if clearState: true is passed
+- tapOn:
+    id: "com.android.permissioncontroller:id/permission_allow_button"
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/btn_accept"
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/btn_close"
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/text_confirm"
+- tapOn: "티빙 로그인" 
+- tapOn: "TVING ID로 시작하기"
+- tapOn: "아이디"
+- inputText:
+    text: "t_principle4"
+- tapOn:
+    text: "비밀번호"
+- inputText:
+    text: "1q2w3e4r5t"
+- tapOn: "로그인하기"
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/image_thumbnail"
+    index: 0
+- tapOn: #기술지원 팝업 Close Button
+    text: "15156557"
+    optional: true
+- tapOn: #다운로드 메뉴의 위치 변경 안내 팝업 Close Button
+    id: "net.cj.cjhv.gs.tving:id/iv_cancel"
+    optional: true
+
+# 라이브  
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/bottom_menu3"
+# 라이브 첫번째 배너 
+- assertVisible: "StillShot Image"
+
+- tapOn: "StillShot Image"
+- assertVisible:
+    id: "net.cj.cjhv.gs.tving:id/surface_view"
+- assertVisible: "일시정지"
+- assertVisible: "편성표"
+- assertVisible: "티빙톡"
+- assertVisible: "공유"

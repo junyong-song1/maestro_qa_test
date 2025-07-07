@@ -1,0 +1,62 @@
+appId: net.cj.cjhv.gs.tving
+#TVING ID 로그인 화면
+#'TVING ID 회원가입하기' 선택
+#회원가입 플로우 진행
+#회원가입 되며, 회원가입 완료 페이지 노출 됨
+#ㆍ '나중에 하기' 선택 시, 홈 진입
+env:
+  RANDOM_USER_ID: ${Math.random().toString(36).substring(2, 10)}
+---
+- launchApp:
+    appId: "net.cj.cjhv.gs.tving"
+    clearState: true
+    clearKeychain: true   # optional: clear *entire* iOS keychain
+    stopApp: false # optional (true by default): stop the app before launching it
+    permissions: { all: allowed } # optional: by default all permissions are allowed,
+                               # even if clearState: true is passed
+- tapOn:
+    id: "com.android.permissioncontroller:id/permission_allow_button"
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/btn_accept"
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/btn_close"
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/text_confirm"
+- tapOn: "티빙 로그인" 
+- tapOn: "TVING ID로 시작하기"
+- tapOn: "회원가입"
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/check_box_all"
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/button_agreement_next"
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/edit_phone_number"
+- inputText:
+    text: "01021455637"
+- tapOn: "인증번호 전송"
+- tapOn:
+    id: "com.touchtype.swiftkey:id/inline_suggestions_surface"
+    delay: 1000
+#회원가입 아이디 입력
+- inputText: "${RANDOM_USER_ID}"
+- hideKeyboard
+- tapOn: "다음"
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/edit_password"
+- inputText: "tving123!"
+- hideKeyboard
+- tapOn: "다음"
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/edit_re_password"
+- inputText: "tving123!"
+- hideKeyboard
+- tapOn: "다음"
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/edit_email"
+- inputText: "principle486@naver.com"
+- hideKeyboard
+- tapOn: "가입하기"
+- tapOn: "나중에 하기"
+- tapOn: #다운로드 메뉴의 위치 변경 안내 팝업 Close Button
+    id: "net.cj.cjhv.gs.tving:id/iv_cancel"
+    optional: true

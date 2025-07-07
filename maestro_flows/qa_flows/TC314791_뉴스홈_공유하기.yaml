@@ -1,0 +1,77 @@
+appId: net.cj.cjhv.gs.tving
+#스페셜관 강조형 or 스페셜관 버튼형 밴드
+#스페셜관 항목 선택
+#스페셜관 상세화면 진입 가능함
+#ㆍ 스페셜관 내 편성된 밴드들 노출됨
+#ㆍ 상단에 스페셜관 배경 이미지 노출
+---
+- launchApp:
+    appId: "net.cj.cjhv.gs.tving"
+    clearState: true
+    clearKeychain: true   # optional: clear *entire* iOS keychain
+    stopApp: false # optional (true by default): stop the app before launching it
+    permissions: { all: allowed } # optional: by default all permissions are allowed,
+                               # even if clearState: true is passed
+- tapOn:
+    id: "com.android.permissioncontroller:id/permission_allow_button"
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/btn_accept"
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/btn_close"
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/text_confirm"
+- tapOn: "티빙 로그인" 
+- tapOn: "TVING ID로 시작하기"
+- tapOn: "아이디"
+- inputText:
+    text: "t_principle4"
+- tapOn:
+    text: "비밀번호"
+- inputText:
+    text: "1q2w3e4r5t"
+- tapOn: "로그인하기"
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/image_thumbnail"
+    index: 0
+- tapOn: #기술지원 팝업 Close Button
+    text: "15156557"
+    optional: true
+- tapOn: #다운로드 메뉴의 위치 변경 안내 팝업 Close Button
+    id: "net.cj.cjhv.gs.tving:id/iv_cancel"
+    optional: true
+
+# 뉴스 메뉴 진입
+- tapOn: "뉴스"
+# 뉴스 진입 확인
+- assertVisible:
+    id: "net.cj.cjhv.gs.tving:id/iv_thumbnail"
+    index: 0
+- assertVisible:
+    id: "net.cj.cjhv.gs.tving:id/tv_title"
+    index: 1
+
+
+# 뉴스 클립 확인
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/iv_thumbnail"
+    index: 0
+- assertVisible:
+    id: "net.cj.cjhv.gs.tving:id/surface_view"
+- assertVisible:
+    id: "net.cj.cjhv.gs.tving:id/txt_title"
+    index: 0
+- assertVisible: "편성표"
+- assertVisible: "티빙톡"
+- assertVisible: "공유"
+
+# 공유하기
+- tapOn: "공유"
+- assertVisible:
+    id: "com.android.intentresolver:id/sem_chooser_content_preview_details_area"
+
+
+
+
+
+
+

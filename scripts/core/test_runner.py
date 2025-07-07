@@ -9,6 +9,7 @@ import os
 import logging
 import sys
 from datetime import datetime
+import frontmatter  # python-frontmatter 라이브러리 임포트
 
 from ..device.device_manager import DeviceInfo
 from ..utils.logger import get_logger
@@ -34,6 +35,13 @@ file_handler = logging.FileHandler("testrail_maestro_runner.log", encoding="utf-
 file_handler.setLevel(logging.INFO)
 file_handler.setFormatter(console_formatter)
 logger.addHandler(file_handler)
+
+@dataclass
+class TestFlow:
+    """Maestro 테스트 플로우 파일 정보를 담는 데이터 클래스"""
+    path: Path
+    metadata: Dict[str, Any]
+    content: str
 
 @dataclass
 class TestResult:
@@ -67,22 +75,50 @@ class TestRunner(ABC):
 class MaestroTestRunner(TestRunner):
     def __init__(self, config_manager, testrail_manager=None):
         super().__init__(config_manager)
-        self.maestro_flows = []
-        self.current_run_id = None  # 현재 테스트 런 ID 저장
+        self.maestro_flows: List[TestFlow] = []  # 타입을 TestFlow 리스트로 변경
+        self.current_run_id = None
         
-        # testrail_manager가 전달되면 사용, 아니면 새로 생성
+        # TestRail Manager 설정
         if testrail_manager:
             self.testrail_manager = testrail_manager
         else:
-            # TestRail 설정을 올바른 형태로 전달
             testrail_config = {
-                'url': config_manager['TestRail']['url'],
-                'username': config_manager['TestRail']['username'],
-                'api_key': config_manager['TestRail']['api_key'],
-                'project_id': config_manager['TestRail']['project_id']
+                'url': config_manager.get('TestRail', 'url'),
+                'username': config_manager.get('TestRail', 'username'),
+                'api_key': config_manager.get('TestRail', 'api_key'),
+                'project_id': config_manager.get('TestRail', 'project_id')
             }
             self.testrail_manager = TestRailManager(testrail_config)
+            
+        # Maestro 플로우 탐색
+        self._discover_maestro_flows()
     
+    def _discover_maestro_flows(self):
+        """maestro_flows 폴더를 스캔하여 모든 테스트 플로우 정보를 로드"""
+        self.maestro_flows = []
+        flow_dir = Path("maestro_flows")
+        if not flow_dir.is_dir():
+            self.logger.warning(f"'{flow_dir}' 디렉토리를 찾을 수 없습니다.")
+            return
+
+        for yaml_path in flow_dir.glob("**/*.yaml"):
+            try:
+                with open(yaml_path, 'r', encoding='utf-8') as f:
+                    post = frontmatter.load(f)
+                    # 필수 메타데이터 검증 (예: appId)
+                    if 'appId' in post.metadata:
+                        self.maestro_flows.append(TestFlow(
+                            path=yaml_path,
+                            metadata=post.metadata,
+                            content=post.content
+                        ))
+                    else:
+                        self.logger.warning(f"메타데이터 누락: {yaml_path} 파일에 'appId'가 필요합니다.")
+            except Exception as e:
+                self.logger.error(f"{yaml_path} 파일을 파싱하는 중 오류 발생: {e}")
+        
+        self.logger.info(f"{len(self.maestro_flows)}개의 유효한 Maestro 플로우를 찾았습니다.")
+
     def run_tests(self, test_cases: List[Any], devices: List[DeviceInfo]) -> List[TestResult]:
         """Maestro 테스트 실행 - 플로우별 즉시 업로드"""
         self.devices = devices
@@ -90,7 +126,7 @@ class MaestroTestRunner(TestRunner):
         
         try:
             # 테스트 시작 시 하나의 테스트 런 생성
-            suite_id = self.config.get('TestRail', 'suite_id', '1787')
+            suite_id = self.config.get('TestRail', 'suite_id', '1798')
             test_run = self.testrail_manager.create_test_run(
                 suite_id=suite_id,
                 name=f"자동화 테스트 - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
@@ -135,40 +171,41 @@ class MaestroTestRunner(TestRunner):
     
     def _run_single_test(self, test_case) -> List[TestResult]:
         """단일 테스트 케이스 실행 - 결과 반환"""
-        case_id = str(test_case.id)
+        case_id = int(test_case.id)
         title = test_case.title
         
         logger.info(f"테스트 실행: {title} (ID: {case_id})")
         
-        yaml_path = self._find_maestro_flow(case_id)
-        if not yaml_path:
+        test_flow = self._find_maestro_flow(case_id)
+        if not test_flow:
             logger.warning(f"YAML 파일 없음: TC{case_id}")
             return []
         
         results = []
         for device in self.devices:
-            result = self._run_maestro_test(yaml_path, device, case_id, title)
+            result = self._run_maestro_test(test_flow, device, str(case_id), title)
             results.append(result)
             self.results.append(result)
         
         return results
     
-    def _run_maestro_test(self, yaml_path: str, device: DeviceInfo, case_id: str, title: str) -> TestResult:
-        """Maestro 테스트 실행 (testrail_maestro_runner.py와 동일한 기준 적용)"""
+    def _run_maestro_test(self, test_flow: TestFlow, device: DeviceInfo, case_id: str, title: str) -> TestResult:
+        """Maestro 테스트 실행 - 임시 파일 대신 content 직접 사용"""
         start_time = time.time()
         
-        # 로그 파일 경로 설정 (artifacts/logs로 변경)
+        # 로그 파일 경로 설정
         today = datetime.now().strftime('%Y%m%d')
         log_dir = Path(f"artifacts/logs/{device.serial}")
         log_dir.mkdir(parents=True, exist_ok=True)
         log_path = log_dir / f"maestro_TC{case_id}.log"
         
-        # Maestro 명령 실행
-        cmd = ["maestro", f"--device={device.serial}", "test", yaml_path]
+        # Maestro 명령 실행 (stdin으로 content 전달)
+        cmd = ["maestro", f"--device={device.serial}", "test", "-"]
         logger.info(f"[{device.serial}] [테스트 실행] {' '.join(cmd)}")
         
         try:
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+            # subprocess.run의 input 인자로 테스트 내용을 전달
+            result = subprocess.run(cmd, input=test_flow.content, capture_output=True, text=True, timeout=300, encoding='utf-8')
             
             # 상세 로그 출력 (testrail_maestro_runner.py와 동일)
             logger.info(f"[{device.serial}] stdout:\n{result.stdout}")
@@ -234,28 +271,20 @@ class MaestroTestRunner(TestRunner):
                 elapsed=f"{time.time() - start_time:.2f}s"
             )
     
-    def _find_app_start_yaml(self) -> Optional[str]:
-        """앱 시작 YAML 파일 찾기"""
-        for f in glob.glob('maestro_flows/TC00000_앱시작*.yaml'):
-            return f
+    def _find_app_start_yaml(self) -> Optional[TestFlow]:
+        """앱 시작 YAML 파일 찾기 (메타데이터 기반)"""
+        for flow in self.maestro_flows:
+            if flow.metadata.get("testrail_case_id") == 0:
+                self.logger.info(f"앱 시작 플로우 찾음: {flow.path}")
+                return flow
         return None
     
-    def _find_maestro_flow(self, case_id: str) -> Optional[str]:
-        """Maestro 플로우 YAML 파일 찾기"""
-        search_patterns = [
-            f"maestro_flows/TC{case_id}_*.yaml",
-            f"maestro_flows/TC{case_id:0>6}_*.yaml"
-        ]
-        
-        for pattern in search_patterns:
-            matches = glob.glob(pattern, recursive=True)
-            matches = [m for m in matches if '/sub_flows/' not in m]
-            
-            if matches:
-                # 최신 파일 선택
-                matches.sort(key=lambda x: os.path.getmtime(x), reverse=True)
-                return matches[0]
-        
+    def _find_maestro_flow(self, case_id: int) -> Optional[TestFlow]:
+        """Maestro 플로우 YAML 파일 찾기 (메타데이터 기반)"""
+        for flow in self.maestro_flows:
+            if flow.metadata.get("testrail_case_id") == case_id:
+                self.logger.info(f"Maestro 플로우 찾음: (ID: {case_id}) -> {flow.path}")
+                return flow
         return None
     
     def _collect_attachments(self, serial: str, date: str) -> List[str]:

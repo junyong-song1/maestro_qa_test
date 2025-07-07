@@ -292,7 +292,7 @@ def run_tests_on_device(serial, cases):
     config = configparser.ConfigParser()
     config.read('config/config.ini')
     tr = config['TestRail']
-    suite_id = tr.get('suite_id', '1787')
+    suite_id = tr.get('suite_id', '1798')
     run_id = subprocess.check_output('python3 scripts/utils/create_testrail_run.py --suite_id ' + suite_id, shell=True).decode().strip()
     model, os_version, build_id, serial = get_device_info(serial)
     today = datetime.now().strftime('%Y%m%d')
@@ -562,7 +562,7 @@ def main(run_id=None):
     config = configparser.ConfigParser()
     config.read('config.ini')
     tr = config['TestRail']
-    suite_id = tr.get('suite_id', '1787')
+    suite_id = tr.get('suite_id', '1798')
     # run_id를 main.py에서 반드시 인자로 넘겨야 함
     if run_id is None:
         print("[오류] run_id는 main.py에서 생성해 인자로 넘겨야 합니다.")

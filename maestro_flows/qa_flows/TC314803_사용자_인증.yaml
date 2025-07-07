@@ -1,0 +1,64 @@
+appId: net.cj.cjhv.gs.tving
+#사용자 인증 안된 계정
+#마이티빙 > 이용권 메뉴 진입
+#이용권 구매 시도 > 사용자 인증 진행
+#사용자 인증 진행 가능 및 완료 됨
+
+---
+- launchApp:
+    appId: "net.cj.cjhv.gs.tving"
+    clearState: true
+    clearKeychain: true   # optional: clear *entire* iOS keychain
+    stopApp: false # optional (true by default): stop the app before launching it
+    permissions: { all: allowed } # optional: by default all permissions are allowed,
+                               # even if clearState: true is passed
+- tapOn:
+    id: "com.android.permissioncontroller:id/permission_allow_button"
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/btn_accept"
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/btn_close"
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/text_confirm"
+- tapOn: "티빙 로그인" 
+
+- tapOn: "카카오로 시작하기"
+#카카오
+- tapOn:
+    id: "loginId--1"
+- inputText:
+    text: "principle345@gmail.com"
+- tapOn:
+    id: "password--2"
+- inputText:
+    text: "Athdwnsdyd5637#"    
+- tapOn: "로그인"
+- tapOn: #기술지원 팝업 Close Button
+    text: "15156557"
+    optional: true
+- tapOn: #다운로드 메뉴의 위치 변경 안내 팝업 Close Button
+    id: "net.cj.cjhv.gs.tving:id/iv_cancel"
+    optional: true
+
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/imageMyProfile"
+- assertVisible: "보유 이용권이 없습니다."
+- tapOn: "이용권 관리"
+- tapOn: "이용권 구독하기"
+- tapOn: "선택하기"
+- tapOn: "확인"
+
+- tapOn: "확인"
+
+#PASS
+- tapOn: 
+    point: "19%,53%" #해상도 다른 단말기에선느 퍼센트 달라질수 있음.  (SKT 알뜰폰)
+- tapOn: "문자(SMS) 인증 SMS 인증번호로 본인확인"
+- tapOn:
+    text: "본인확인 이용 동의(필수)"
+    index: 0
+- tapOn: "다음"
+#PASS 개인정보 입력
+- tapOn: "이름"
+- inputText: "송준용" ##한글입력이 안됨 
+

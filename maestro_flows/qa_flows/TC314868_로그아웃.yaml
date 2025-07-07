@@ -1,0 +1,56 @@
+appId: net.cj.cjhv.gs.tving
+#마이티빙
+#"로그아웃" 버튼 선택
+#로그아웃 확인 팝업 > "로그아웃" 버튼 선택
+#로그아웃 되며, 온보딩 페이지로 이동 됨
+---
+- launchApp:
+    appId: "net.cj.cjhv.gs.tving"
+    clearState: true
+    clearKeychain: true   # optional: clear *entire* iOS keychain
+    stopApp: false # optional (true by default): stop the app before launching it
+    permissions: { all: allowed } # optional: by default all permissions are allowed,
+                               # even if clearState: true is passed
+- tapOn:
+    id: "com.android.permissioncontroller:id/permission_allow_button"
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/btn_accept"
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/btn_close"
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/text_confirm"
+- tapOn: "티빙 로그인" 
+- tapOn: "TVING ID로 시작하기"
+- tapOn: "아이디"
+- inputText:
+    text: "t_principle4"
+- tapOn:
+    text: "비밀번호"
+- inputText:
+    text: "1q2w3e4r5t"
+- tapOn: "로그인하기"
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/image_thumbnail"
+    index: 0
+- tapOn: #기술지원 팝업 Close Button
+    text: "15156557"
+    optional: true
+- tapOn: #다운로드 메뉴의 위치 변경 안내 팝업 Close Button
+    id: "net.cj.cjhv.gs.tving:id/iv_cancel"
+#로그아웃    
+- assertVisible:
+    id: "net.cj.cjhv.gs.tving:id/imageMyProfile"
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/imageMyProfile"
+- repeat:
+    while:
+      notVisible:
+        text: "로그아웃" # 실제 버튼의 텍스트로 변경해주세요
+    commands:
+      - swipe:
+          direction: UP
+          duration: 1000
+- assertVisible: "로그아웃"
+- tapOn: "로그아웃"
+- tapOn: "로그아웃"    
+- assertVisible: "티빙 로그인"

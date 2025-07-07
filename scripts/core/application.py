@@ -38,7 +38,7 @@ class QAApplication:
             
             # TestRail에서 테스트 케이스 가져오기
             # get_testrail 대신 get 사용
-            suite_id = self.config.get('TestRail', 'suite_id', '1787')
+            suite_id = self.config.get('TestRail', 'suite_id', '1798')
             test_cases = self.testrail_manager.get_cases_by_suite(suite_id)
             
             if not test_cases:
