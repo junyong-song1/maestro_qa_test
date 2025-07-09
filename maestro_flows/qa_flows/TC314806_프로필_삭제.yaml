@@ -59,14 +59,11 @@ appId: net.cj.cjhv.gs.tving
 - assertVisible:
     id: "net.cj.cjhv.gs.tving:id/image_add"
 
-#잠금 프로필 전환
-#- tapOn:
-#    id: "net.cj.cjhv.gs.tving:id/imageMyProfile"
-#- tapOn: 프로필 전환 
-#- tapOn:
-#    id: net.cj.cjhv.gs.tving:id/image_thumbnail
-#    index: 3
-#- inputText: "2072"
+
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/image_thumbnail"
+    index: 0
+
 - assertVisible: "드라마"
 - assertVisible: "예능"
 - assertVisible: "영화"
