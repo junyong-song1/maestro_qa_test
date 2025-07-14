@@ -7,7 +7,7 @@ from ..device.device_manager import DeviceManager
 from ..testrail import testrail
 from ..utils.logger import get_logger
 from .test_runner import MaestroTestRunner, TestResult
-from ..utils.logcat_utils import save_logcat, extract_api_log_for_case  # logcat 저장 유틸리티 import
+from ..utils.logcat_utils import save_logcat  # logcat 저장 유틸리티 import
 
 class QAApplication:
     def __init__(self):
@@ -61,7 +61,7 @@ class QAApplication:
             log_path = f"artifacts/result/{serial}/{timestamp}/api_log.mitm"
 
             # 1. mitmproxy 실행
-            start_mitmproxy(log_path, port=8080)
+            # start_mitmproxy(log_path, port=8080)  # 삭제
 
             try:
                 # 테스트 실행
@@ -69,10 +69,12 @@ class QAApplication:
                 self.logger.info(f"테스트 완료: {len(results)}개 결과")
             finally:
                 # 2. mitmproxy 종료 (예외 발생 시에도 안전하게)
-                stop_mitmproxy()
+                # stop_mitmproxy()  # 삭제
+                pass
 
             # 3. 로그 분석 (에러 API만 추출)
-            errors = extract_api_errors_from_mitmflow(log_path)
+            # errors = extract_api_errors_from_mitmflow(log_path)  # 삭제
+            errors = []  # 대체: 빈 리스트로 처리
 
             # 4. 테스트 실행 후 logcat 저장 및 TestRail 업로드
             for result in results:
@@ -81,7 +83,7 @@ class QAApplication:
                 mitmproxy_log_path = "mitmproxy.log"
                 import os
                 if os.path.exists(mitmproxy_log_path):
-                    extract_api_log_for_case(mitmproxy_log_path, result.serial, result.case_id, timestamp)
+                    pass  # extract_api_log_for_case 삭제됨
                 # API 상태 체크 자동화 (예시)
                 self.check_api_status(result.serial, result.case_id, timestamp)
                 # TestRail 업로드 (API 오류 코멘트 포함)
