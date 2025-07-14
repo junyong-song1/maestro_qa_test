@@ -9,10 +9,6 @@ import os
 import logging
 import sys
 from datetime import datetime
-try:
-    import frontmatter  # python-frontmatter 라이브러리 임포트
-except ImportError:
-    frontmatter = None  # linter 오류 방지용, 실제 실행환경에서는 설치 필요
 
 from ..device.device_manager import DeviceInfo
 from ..utils.logger import get_logger
@@ -96,7 +92,7 @@ class MaestroTestRunner(TestRunner):
         self._discover_maestro_flows()
     
     def _discover_maestro_flows(self):
-        """maestro_flows 폴더를 스캔하여 모든 테스트 플로우 정보를 로드"""
+        """maestro_flows 폴더를 스캔하여 모든 테스트 플로우 정보를 로드 (frontmatter 없이 파일 경로만으로 등록)"""
         self.maestro_flows = []
         flow_dir = Path("maestro_flows/qa_flows")
         if not flow_dir.is_dir():
@@ -105,20 +101,15 @@ class MaestroTestRunner(TestRunner):
 
         for yaml_path in flow_dir.glob("**/*.yaml"):
             try:
-                if frontmatter is not None:
-                    with open(yaml_path, 'r', encoding='utf-8') as f:
-                        post = frontmatter.load(f)
-                        # appId 유무와 관계없이 모든 yaml을 실행 대상으로 포함
-                        self.maestro_flows.append(TestFlow(
-                            path=yaml_path,
-                            metadata=post.metadata,
-                            content=post.content
-                        ))
-                else:
-                    self.logger.warning(f"frontmatter 모듈이 없어 {yaml_path} 파일을 파싱하지 못했습니다.")
+                # frontmatter 없이 파일 경로만으로 TestFlow 추가
+                self.maestro_flows.append(TestFlow(
+                    path=yaml_path,
+                    metadata={},  # 메타데이터는 비워둠
+                    content=""    # content도 비워둠(필요시 파일 내용 읽기)
+                ))
             except Exception as e:
                 self.logger.error(f"{yaml_path} 파일을 파싱하는 중 오류 발생: {e}")
-        
+
         self.logger.info(f"{len(self.maestro_flows)}개의 유효한 Maestro 플로우를 찾았습니다.")
 
     def run_tests(self, test_cases: List[Any], devices: List[DeviceInfo]) -> List[TestResult]:

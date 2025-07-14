@@ -1,6 +1,9 @@
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
 from django.shortcuts import render
 from scripts.config.config_manager import ConfigManager
-from scripts.testrail.testrail_manager import TestRailManager
+from scripts.testrail.testrail import TestRailManager
 import logging
 import datetime
 import pytz
@@ -9,7 +12,7 @@ logging.basicConfig(level=logging.WARNING)
 
 def dashboard(request):
     print("[DEBUG] dashboard view 진입")
-    config = ConfigManager()
+    config = ConfigManager().get_testrail_config()
     tr_manager = TestRailManager(config)
     try:
         runs = tr_manager.get_test_runs()
@@ -117,7 +120,7 @@ def test_detail(request, test_id):
     return render(request, 'qa_monitor/test_detail.html', {'test_id': test_id})
 
 def testcase_detail(request, testcase_id):
-    config = ConfigManager()
+    config = ConfigManager().get_testrail_config()
     tr_manager = TestRailManager(config)
     # 최신 테스트런에서 suite_id 추출
     try:
@@ -180,7 +183,7 @@ def testcase_detail(request, testcase_id):
     return render(request, 'qa_monitor/testcase_detail.html', context)
 
 def testrun_detail(request, run_id):
-    config = ConfigManager()
+    config = ConfigManager().get_testrail_config()
     tr_manager = TestRailManager(config)
     # 테스트런 정보 및 테스트케이스 리스트 가져오기
     try:
@@ -230,7 +233,7 @@ def testrun_detail(request, run_id):
     return render(request, 'qa_monitor/testrun_detail.html', context)
 
 def test_result_test(request):
-    config = ConfigManager()
+    config = ConfigManager().get_testrail_config()
     tr_manager = TestRailManager(config)
     test_id = "392701"
     try:

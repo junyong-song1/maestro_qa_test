@@ -1,0 +1,87 @@
+appId: net.cj.cjhv.gs.tving
+#로그인 수단 선택 화면 > TVING ID 로그인 가능 확인
+#로그인 후 홈화면 진입 가능함
+---
+- launchApp:
+    appId: "net.cj.cjhv.gs.tving"
+    clearState: true
+    clearKeychain: true   # optional: clear *entire* iOS keychain
+    stopApp: false # optional (true by default): stop the app before launching it
+    permissions: { all: allowed } # optional: by default all permissions are allowed,
+                               # even if clearState: true is passed
+- tapOn:
+    id: "com.android.permissioncontroller:id/permission_allow_button"
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/btn_accept"
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/btn_close"
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/text_confirm"
+- tapOn: "티빙 로그인" 
+- tapOn: "TVING ID로 시작하기"
+- tapOn: "아이디"
+- inputText:
+    text: "t_principle4"
+- tapOn:
+    text: "비밀번호"
+- inputText:
+    text: "1q2w3e4r5t"
+- tapOn: "로그인하기"
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/image_thumbnail"
+    index: 0
+- tapOn: #기술지원 팝업 Close Button
+    text: "15156557"
+    optional: true
+- tapOn: #다운로드 메뉴의 위치 변경 안내 팝업 Close Button
+    id: "net.cj.cjhv.gs.tving:id/iv_cancel"
+    optional: true
+
+
+#오늘의 티빙 TOP 20 까지 스크롤
+- scrollUntilVisible:
+    element: "오늘의 티빙 TOP 20"
+    direction: DOWN
+    centerElement: true
+
+# 오늘의 티빙 TOP 20 1위 선택
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/iv_thumbnail"
+    index: 0
+
+- assertVisible:
+    id: "net.cj.cjhv.gs.tving:id/iv_thumbnail"
+- assertVisible: "찜"
+- assertVisible: "공유"
+
+#재생 클릭
+- tapOn: "Error Icon"
+
+- runFlow:
+    when:
+      notVisible: # visible의 반대 조건
+        text: "설정" # 또는 id: "tving_login_button_id", accessibilityText: "티빙 로그인" 등
+    commands:
+      - tapOn: 
+          id: "net.cj.cjhv.gs.tving:id/iv_thumbnail"
+
+#플레이어 설정 클릭
+- tapOn: "설정"
+
+#화질 선택 (default : 자동)
+- tapOn: "Forward Arrow Icon"
+
+#고화질 선택
+- tapOn: "고화질"
+
+#고화질 선택 확인하기 위한 프로세스
+- tapOn:
+    id: "net.cj.cjhv.gs.tving:id/iv_thumbnail"
+
+#플레이어 설정 클릭
+- tapOn: "설정"
+
+#고화질 선택 확인
+- assertVisible: "고화질"
+
+
