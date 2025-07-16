@@ -11,10 +11,13 @@ appId: net.cj.cjhv.gs.tving
                                # even if clearState: true is passed
 - tapOn:
     id: "com.android.permissioncontroller:id/permission_allow_button"
+    optional: true
 - tapOn:
     id: "net.cj.cjhv.gs.tving:id/btn_accept"
+    optional: true
 - tapOn:
     id: "net.cj.cjhv.gs.tving:id/btn_close"
+    optional: true
 - tapOn:
     id: "net.cj.cjhv.gs.tving:id/text_confirm"
 - tapOn: "티빙 로그인" 
