@@ -189,12 +189,14 @@ class MaestroTestRunner(TestRunner):
         mitmdump_proc = None
         api_dump_path = None
         screenshot_path = None  # 스크린샷 경로 변수 추가
+        logcat_path = None  # 로그캣 경로 변수 추가
         try:
             # 로그 파일 경로 설정
             today = datetime.now().strftime('%Y%m%d')
             log_dir = Path(f"artifacts/logs/{device.serial}")
             log_dir.mkdir(parents=True, exist_ok=True)
             log_path = log_dir / f"maestro_TC{case_id}.log"
+            logcat_path = log_dir / f"logcat_TC{case_id}.txt"  # 로그캣 파일 경로 추가
 
             # mitmdump 백그라운드 실행 (테스트케이스별)
             api_dump_path = log_dir / f"api_TC{case_id}.dump"
@@ -218,9 +220,15 @@ class MaestroTestRunner(TestRunner):
 
             # 로그 저장
             with open(log_path, 'w', encoding='utf-8') as f:
-                f.write(result.stdout)
+                f.write(f"=== Maestro Test Execution Log ===\n")
+                f.write(f"Test Case: {title} (ID: {case_id})\n")
+                f.write(f"Device: {device.model} ({device.serial})\n")
+                f.write(f"Command: {' '.join(cmd)}\n")
+                f.write(f"Return Code: {result.returncode}\n")
+                f.write(f"Execution Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                f.write(f"\n=== STDOUT ===\n{result.stdout}\n")
                 if result.stderr:
-                    f.write(f"\nSTDERR:\n{result.stderr}")
+                    f.write(f"\n=== STDERR ===\n{result.stderr}\n")
 
             # 성공 판정 기준 수정: returncode=0이면 성공, [Passed]는 추가 확인용
             output = (result.stdout or "") + (result.stderr or "")
@@ -238,7 +246,59 @@ class MaestroTestRunner(TestRunner):
                 if has_passed_message:
                     logger.warning(f"[{device.serial}] returncode!=0이지만 [Passed]가 있어 경고 처리")
 
-            error_log = result.stderr if result.stderr else ""
+            # --- 오류 로그 상세 분석 ---
+            error_log = ""
+            if result.returncode != 0 or status == "실패":
+                # Maestro 오류 분석
+                maestro_errors = []
+                if result.stderr:
+                    maestro_errors.append(f"Maestro Error: {result.stderr}")
+                
+                # stdout에서 오류 패턴 찾기
+                stdout_lines = result.stdout.split('\n') if result.stdout else []
+                for line in stdout_lines:
+                    if any(keyword in line.lower() for keyword in ['error', 'failed', 'exception', 'timeout', 'not found', 'element not visible']):
+                        maestro_errors.append(f"Maestro Output Error: {line.strip()}")
+                
+                # 로그캣 수집 (실패 시에만)
+                try:
+                    logger.info(f"[{device.serial}] 실패 감지 - 로그캣 수집 시작")
+                    logcat_result = subprocess.run([
+                        "adb", "-s", device.serial, "logcat", "-d", "-v", "time"
+                    ], capture_output=True, text=True, timeout=30, encoding='utf-8')
+                    
+                    if logcat_result.returncode == 0 and logcat_result.stdout:
+                        # 로그캣 파일 저장
+                        with open(logcat_path, 'w', encoding='utf-8') as f:
+                            f.write(f"=== Device Logcat (Test Failed) ===\n")
+                            f.write(f"Test Case: {title} (ID: {case_id})\n")
+                            f.write(f"Device: {device.model} ({device.serial})\n")
+                            f.write(f"Collection Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                            f.write(f"\n{logcat_result.stdout}")
+                        
+                        # 로그캣에서 오류 패턴 찾기
+                        logcat_lines = logcat_result.stdout.split('\n')
+                        error_patterns = [
+                            'fatal', 'error', 'exception', 'crash', 'anr', 'timeout',
+                            'tving', 'maestro', 'ui test', 'element', 'not found'
+                        ]
+                        
+                        for line in logcat_lines[-100:]:  # 최근 100줄만 분석
+                            if any(pattern in line.lower() for pattern in error_patterns):
+                                maestro_errors.append(f"Logcat Error: {line.strip()}")
+                        
+                        logger.info(f"[{device.serial}] 로그캣 수집 완료: {logcat_path}")
+                    else:
+                        logger.warning(f"[{device.serial}] 로그캣 수집 실패: returncode={logcat_result.returncode}")
+                        
+                except Exception as e:
+                    logger.error(f"[{device.serial}] 로그캣 수집 중 오류: {e}")
+                
+                # 오류 로그 구성
+                if maestro_errors:
+                    error_log = "\n".join(maestro_errors[:10])  # 최대 10개 오류만 포함
+                else:
+                    error_log = f"테스트 실패 (returncode={result.returncode}) - 상세 오류 정보 없음"
 
             # --- 스크린샷 저장 (성공/실패 모두) ---
             screenshot_dir = Path(f"artifacts/images/{today}")
@@ -289,7 +349,7 @@ class MaestroTestRunner(TestRunner):
                     else:
                         logger.error(f"스크린샷 저장 최종 실패: {e}")
 
-            # 첨부파일 수집 (artifacts/result로 변경) + 스크린샷 추가
+            # 첨부파일 수집 (artifacts/result로 변경) + 스크린샷 + 로그캣 추가
             attachments = self._collect_attachments(device.serial, today)
             # 스크린샷이 첨부파일에 없으면 추가 (유효한 파일만)
             if str(screenshot_path) not in attachments and screenshot_path.exists() and screenshot_path.stat().st_size > 1000:
@@ -297,6 +357,11 @@ class MaestroTestRunner(TestRunner):
                 logger.info(f"스크린샷을 첨부파일 목록에 추가: {screenshot_path}")
             else:
                 logger.warning(f"스크린샷을 첨부파일 목록에 추가하지 않음: 존재={screenshot_path.exists()}, 크기={screenshot_path.stat().st_size if screenshot_path.exists() else 0}")
+            
+            # 로그캣 파일 추가 (실패 시에만)
+            if status == "실패" and logcat_path and logcat_path.exists():
+                attachments.append(str(logcat_path))
+                logger.info(f"로그캣 파일을 첨부파일 목록에 추가: {logcat_path}")
 
             elapsed = f"{time.time() - start_time:.2f}s"
 
@@ -315,7 +380,7 @@ class MaestroTestRunner(TestRunner):
             )
         except subprocess.TimeoutExpired:
             status = "실패"
-            error_msg = "테스트 타임아웃"
+            error_msg = "테스트 타임아웃 (300초 초과)"
             logger.error(f"[{device.serial}] 테스트 타임아웃: {case_id}")
             return TestResult(
                 case_id=case_id,
@@ -327,14 +392,26 @@ class MaestroTestRunner(TestRunner):
                 tving_version=device.tving_version,
                 log_path=str(log_path),
                 attachments=[],
-                error_log="테스트 타임아웃",
+                error_log="테스트 타임아웃 (300초 초과) - Maestro 명령이 지정된 시간 내에 완료되지 않았습니다.",
                 elapsed=f"{time.time() - start_time:.2f}s"
             )
         except Exception as e:
             status = "실패"
             error_msg = str(e)
             logger.error(f"[{device.serial}] 테스트 실행 중 예외 발생: {e}")
-            raise
+            return TestResult(
+                case_id=case_id,
+                title=title,
+                status="실패",
+                serial=device.serial,
+                model=device.model,
+                os_version=device.os_version,
+                tving_version=device.tving_version,
+                log_path=str(log_path),
+                attachments=[],
+                error_log=f"테스트 실행 중 예외 발생: {str(e)}",
+                elapsed=f"{time.time() - start_time:.2f}s"
+            )
         finally:
             # mitmdump 종료 및 API 분석
             if mitmdump_proc:
@@ -385,14 +462,21 @@ class MaestroTestRunner(TestRunner):
         return None
     
     def _collect_attachments(self, serial: str, date: str) -> List[str]:
-        """첨부파일 수집 (artifacts/result로 변경)"""
-        result_dir = Path(f"artifacts/result/{serial}/{date}")
-        if not result_dir.exists():
-            return []
-        
+        """첨부파일 수집 (artifacts/result + logs 포함)"""
         attachments = []
-        for ext in ['*.mp4', '*.png', '*.txt']:
-            attachments.extend([str(f) for f in result_dir.glob(ext)])
+        
+        # 1. artifacts/result에서 첨부파일 수집
+        result_dir = Path(f"artifacts/result/{serial}/{date}")
+        if result_dir.exists():
+            for ext in ['*.mp4', '*.png', '*.txt']:
+                attachments.extend([str(f) for f in result_dir.glob(ext)])
+        
+        # 2. artifacts/logs에서 로그캣 파일 수집 (실패한 테스트의 경우)
+        logs_dir = Path(f"artifacts/logs/{serial}")
+        if logs_dir.exists():
+            # 로그캣 파일 추가
+            for logcat_file in logs_dir.glob("logcat_TC*.txt"):
+                attachments.append(str(logcat_file))
         
         return attachments
     
@@ -421,9 +505,24 @@ class MaestroTestRunner(TestRunner):
             comment_lines.append("")
 
             # --- 3. 주요 에러/이슈 ---
-            error_details = [
-                f"- [{r.model}] {r.error_log}" for r in results if r.status == "실패" and r.error_log
-            ]
+            error_details = []
+            for r in results:
+                if r.status == "실패" and r.error_log:
+                    # 오류 타입 분석
+                    error_type = "Unknown"
+                    if "Maestro Error:" in r.error_log:
+                        error_type = "Maestro UI Automation"
+                    elif "Logcat Error:" in r.error_log:
+                        error_type = "Device Logcat"
+                    elif "API" in r.error_log:
+                        error_type = "API/Network"
+                    elif "timeout" in r.error_log.lower():
+                        error_type = "Timeout"
+                    elif "exception" in r.error_log.lower():
+                        error_type = "Exception"
+                    
+                    error_details.append(f"- [{error_type}] {r.model} ({r.serial}): {r.error_log[:200]}{'...' if len(r.error_log) > 200 else ''}")
+            
             if error_details:
                 comment_lines.append("[주요 에러/이슈]")
                 comment_lines.extend(error_details)
@@ -479,11 +578,39 @@ class MaestroTestRunner(TestRunner):
                                 comment_lines.append(f"- {url} (status: {status_code}, {elapsed if elapsed is not None else 'N/A'}s)\n  → {resp_short}")
                 except Exception as e:
                     comment_lines.append(f"[API 실패 상세 추출 오류] {e}")
-                # UI 자동화 에러 로그 요약
+                
+                # UI 자동화 에러 로그 상세 분석
                 for r in results:
                     if r.status == "실패" and r.error_log:
-                        comment_lines.append(f"[UI 자동화 오류] ({r.model}/{r.serial})")
-                        comment_lines.append(r.error_log[:300])
+                        comment_lines.append(f"[UI 자동화 오류 상세] ({r.model}/{r.serial})")
+                        
+                        # 오류 타입별 분석
+                        if "Maestro Error:" in r.error_log:
+                            comment_lines.append("🔍 Maestro UI 자동화 오류:")
+                            # Maestro 오류에서 핵심 정보 추출
+                            maestro_errors = [line for line in r.error_log.split('\n') if 'Maestro Error:' in line]
+                            for error in maestro_errors[:3]:  # 최대 3개만 표시
+                                comment_lines.append(f"  • {error.replace('Maestro Error:', '').strip()}")
+                        
+                        if "Logcat Error:" in r.error_log:
+                            comment_lines.append("📱 디바이스 로그캣 오류:")
+                            # 로그캣 오류에서 핵심 정보 추출
+                            logcat_errors = [line for line in r.error_log.split('\n') if 'Logcat Error:' in line]
+                            for error in logcat_errors[:3]:  # 최대 3개만 표시
+                                comment_lines.append(f"  • {error.replace('Logcat Error:', '').strip()}")
+                        
+                        if "timeout" in r.error_log.lower():
+                            comment_lines.append("⏰ 타임아웃 오류:")
+                            comment_lines.append("  • 테스트 실행 시간이 300초를 초과했습니다.")
+                            comment_lines.append("  • 네트워크 상태나 디바이스 성능을 확인해주세요.")
+                        
+                        # 일반적인 해결 방안 제시
+                        comment_lines.append("💡 해결 방안:")
+                        comment_lines.append("  • 디바이스 재부팅 후 재시도")
+                        comment_lines.append("  • 네트워크 연결 상태 확인")
+                        comment_lines.append("  • TVING 앱 재설치 또는 캐시 클리어")
+                        comment_lines.append("  • 첨부된 로그캣 파일 확인")
+                        comment_lines.append("")
 
             # TestRail status_id 매핑
             status_map = {
