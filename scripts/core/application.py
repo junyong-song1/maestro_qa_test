@@ -7,7 +7,7 @@ from ..device.device_manager import DeviceManager
 from ..testrail import testrail
 from ..utils.logger import get_logger
 from .test_runner import MaestroTestRunner, TestResult
-from ..utils.logcat_utils import save_logcat  # logcat 저장 유틸리티 import
+# from ..utils.logcat_utils import save_logcat  # logcat 저장 유틸리티 import
 
 class QAApplication:
     def __init__(self):
@@ -78,7 +78,7 @@ class QAApplication:
 
             # 4. 테스트 실행 후 logcat 저장 및 TestRail 업로드
             for result in results:
-                save_logcat(result.serial, result.case_id, timestamp)
+                # save_logcat(result.serial, result.case_id, timestamp)
                 # mitmproxy.log가 있으면 케이스별로 복사
                 mitmproxy_log_path = "mitmproxy.log"
                 import os

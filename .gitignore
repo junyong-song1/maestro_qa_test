@@ -1,16 +1,97 @@
-# macOS
-.DS_Store
+# QA 자동화 프로젝트 .gitignore
 
-# 환경설정/민감정보
-config.ini
-
-# Python
-venv/
-__pycache__/
-
-# 로그/결과/임시파일 (artifacts로 통합)
+# === 실행 결과 및 아티팩트 ===
 artifacts/
+result/
+logs/
 *.log
-*.tmp
-*.mp4
+*.dump
+
+# === 이미지 및 미디어 파일 ===
 *.png
+*.jpg
+*.jpeg
+*.mp4
+*.avi
+*.mov
+
+# === 데이터베이스 파일 ===
+*.db
+*.sqlite
+*.sqlite3
+test_log.db
+
+# === Python 관련 ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# === 가상환경 ===
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# === IDE 및 에디터 ===
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# === OS 관련 ===
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# === 임시 파일 ===
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# === 설정 파일 (개인 정보 포함 가능) ===
+config.ini
+.env
+*.key
+*.pem
+
+# === Maestro 관련 ===
+.maestro/
+maestro_flows/**/tmp_*.yaml
+
+# === ADB 관련 ===
+adbkey
+adbkey.pub
+
+# === TestRail 관련 ===
+testrail_*.log
+
+# === 기타 ===
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
