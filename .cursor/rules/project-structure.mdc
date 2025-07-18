@@ -1,9 +1,4 @@
 ---
-description: 
-globs: 
-alwaysApply: false
----
----
 description: |
   QA 자동화 테스트 프로젝트의 클래스 기반 구조 및 주요 파일 역할을 설명합니다.
 globs:
@@ -15,6 +10,7 @@ globs:
   - config/*
   - maestro_flows/**
   - artifacts/**
+  - dashboard/**
   - README.md
   - install_and_run.sh
   - requirements.txt
@@ -26,7 +22,7 @@ globs:
   - .cursor/project-structure.mdc
 alwaysApply: false
 ---
-# Project Structure Guide (클래스 기반 구조)
+# Project Structure Guide (클래스 기반 구조) v2.0.0
 
 ## 📁 Core Structure
 
@@ -40,9 +36,13 @@ alwaysApply: false
 - **application.py**: 메인 애플리케이션 클래스
   - 전체 테스트 워크플로우 오케스트레이션
   - 디바이스, TestRail, 테스트 러너 통합 관리
-- **test_runner.py**: 테스트 실행 엔진
+- **test_runner.py**: 테스트 실행 엔진 (v2.0.0 고도화)
   - MaestroTestRunner: Maestro 기반 테스트 실행
   - TestResult: 테스트 결과 데이터 클래스
+  - 스크린샷 자동 저장 (성공/실패 모두)
+  - mitmproxy API 트래픽 캡처
+  - SQLite DB 연동
+  - 즉시 TestRail 결과 업로드
 - **main.py**: 진입점 (새로운 구조)
 - **testrail_maestro_runner.py**: 기존 레거시 코드 (점진적 마이그레이션)
 
@@ -64,6 +64,15 @@ alwaysApply: false
 - **logger.py**: 구조화된 로깅 시스템
   - ColoredFormatter: 터미널 색상 지원
   - TestLogger: 전용 로거 클래스
+- **api_capture.py**: API 트래픽 캡처 및 분석 (v2.0.0 신규)
+  - mitmproxy 덤프 파일 파싱
+  - tving.com 도메인 필터링
+  - SQLite DB 저장
+  - 인코딩 에러 방지 처리
+- **testlog_db.py**: SQLite 데이터베이스 관리 (v2.0.0 신규)
+  - 테스트 로그 저장 및 조회
+  - API 데이터 저장 및 분석
+  - WAL 모드 지원
 - **maestro_runner.py**: Maestro 실행 유틸리티
 - **device_utils.py**: 기존 디바이스 유틸리티 (호환성)
 - **create_testrail_run.py**: TestRail 런 생성 스크립트
@@ -77,19 +86,44 @@ alwaysApply: false
 - **config.ini.example**: 설정 예시 파일
 
 ### maestro_flows/
-- **TC*.yaml**: Maestro 테스트 플로우 파일들
+- **qa_flows/**: 메인 테스트 케이스 (80+ 케이스)
+  - TC314789_채널명&카테고리.yaml
+  - TC314790_클립타이틀.yaml
+  - TC314791_뉴스홈_공유하기.yaml
+  - ... (80개 이상의 테스트 케이스)
 - **sub_flows/**: 공통 플로우 모듈
+  - login_flow.yaml
+  - logout_flow.yaml
 - **TC00000_앱시작.yaml**: 앱 초기화 플로우
+
+### dashboard/ (v2.0.0 신규)
+- **qa_monitor/**: Django QA 모니터링 앱
+  - models.py: 데이터 모델
+  - views.py: 뷰 로직 (대시보드, 테스트 상세 등)
+  - templates/: HTML 템플릿
+    - dashboard.html: 메인 대시보드
+    - testcase_detail.html: 테스트케이스 상세
+    - testrun_detail.html: 테스트런 상세
+  - urls.py: URL 라우팅
+- **manage.py**: Django 관리 스크립트
+- **settings.py**: Django 설정
 
 ### artifacts/
 - **logs/**: 단말기별 로그 디렉토리
   - **{serial}/**: 단말기별 로그 폴더
   - **maestro_TC*.log**: Maestro 실행 로그
+  - **api_TC*.dump**: mitmproxy API 덤프 파일
+- **images/**: 스크린샷 저장소 (v2.0.0 신규)
+  - **{YYYYMMDD}/**: 날짜별 스크린샷 폴더
+  - **TC{case_id}_{serial}_{status}_{timestamp}.png**: 스크린샷 파일
 - **result/**: 테스트 결과 및 첨부파일
   - **{serial}/{YYYYMMDD}/**: 단말기/날짜별 결과
   - ***.mp4**: 테스트 녹화 영상
   - ***.png**: 스크린샷
   - ***.txt**: 로그캣 및 기타 로그
+- **test_log.db**: SQLite 데이터베이스 (v2.0.0 신규)
+  - test_log 테이블: 테스트 실행 로그
+  - test_api 테이블: API 트래픽 데이터
 
 ## 🚀 Execution Flow
 
@@ -98,7 +132,12 @@ alwaysApply: false
 3. **TestRailManager.create_test_run()** → TestRail 런 생성
 4. **TestRailManager.get_cases_by_suite()** → 테스트 케이스 조회
 5. **MaestroTestRunner.run_tests()** → 테스트 실행
-6. **TestRailManager.add_result()** → 결과 업로드
+   - mitmproxy 시작 (API 캡처)
+   - Maestro 테스트 실행
+   - 스크린샷 자동 저장
+   - mitmproxy 종료 및 API 데이터 저장
+   - 즉시 TestRail 결과 업로드 (이미지 첨부)
+6. **Django Dashboard** → 실시간 모니터링
 
 ## 🔧 Key Features
 
@@ -122,6 +161,31 @@ alwaysApply: false
 - **클래스 기반**: TestRailManager로 API 관리
 - **데이터 클래스**: TestCase, TestRun 등 명확한 데이터 구조
 - **에러 처리**: API 호출 실패 시 적절한 처리
+- **즉시 업로드**: 테스트 완료 후 즉시 결과 업로드
+
+### 스크린샷 자동화 (v2.0.0)
+- **저장 방식**: `adb shell screencap + adb pull` 방식
+- **재시도 로직**: 최대 3회 재시도로 안정성 확보
+- **파일 검증**: 파일 크기 검사로 유효성 확인
+- **TestRail 연동**: 이미지 파일 자동 첨부
+
+### API 트래픽 캡처 (v2.0.0)
+- **mitmproxy 연동**: 실시간 네트워크 모니터링
+- **도메인 필터링**: tving.com만 캡처하여 관련성 확보
+- **SQLite 저장**: 요청/응답, 응답시간, 상태코드 저장
+- **TestRail 통합**: API 통계를 코멘트에 자동 포함
+
+### SQLite 데이터베이스 (v2.0.0)
+- **테스트 로그**: 단계별 실행 시간, 상태, 에러 정보
+- **API 데이터**: 네트워크 요청/응답 상세 정보
+- **성능 분석**: 응답시간 통계, 실패 패턴 분석
+- **WAL 모드**: 동시 접근 시 안정성 확보
+
+### Django 웹 대시보드 (v2.0.0)
+- **실시간 모니터링**: 현재 테스트 상태 실시간 표시
+- **결과 통계**: 성공/실패/차단/미테스트 케이스 통계
+- **히스토리 조회**: 최근 테스트 런 목록 및 결과
+- **상세 정보**: 개별 테스트케이스/런 상세 정보
 
 ## 📋 Migration Notes
 
@@ -129,9 +193,33 @@ alwaysApply: false
 - 점진적 마이그레이션으로 안정성 확보
 - 호환성을 위한 기존 파일들 유지
 - 새로운 기능은 클래스 기반 구조로 개발
+- v2.0.0에서 스크린샷, API 캡처, DB, 대시보드 기능 추가
 
 ## 🛠 Development Guidelines
 
+1. **새 기능 추가**: 해당 도메인의 클래스에 메서드 추가
+2. **설정 변경**: ConfigManager를 통해서만 접근
+3. **로깅**: TestLogger 사용으로 일관된 로그 출력
+4. **에러 처리**: 적절한 예외 처리 및 로깅
+5. **타입 힌트**: 모든 함수/메서드에 타입 정보 추가
+6. **스크린샷**: 성공/실패 모든 테스트에서 자동 저장
+7. **API 캡처**: mitmproxy를 통한 네트워크 모니터링
+8. **데이터베이스**: SQLite를 통한 구조화된 데이터 관리
+
+## 🔄 Version History
+
+### v2.0.0 (2024-12-17)
+- ✅ 스크린샷 자동 저장 기능 추가 (성공/실패 모두)
+- ✅ API 트래픽 캡처 및 SQLite DB 저장
+- ✅ TestRail 이미지 첨부파일 자동 업로드
+- ✅ Django 웹 대시보드 추가
+- ✅ 클래스 기반 아키텍처로 리팩토링
+- ✅ SQLite 데이터베이스 통합 관리
+
+### v1.0.0 (2024-12-01)
+- ✅ 기본 Maestro 테스트 자동화
+- ✅ TestRail 연동
+- ✅ 멀티 디바이스 지원
 1. **새 기능 추가**: 해당 도메인의 클래스에 메서드 추가
 2. **설정 변경**: ConfigManager를 통해서만 접근
 3. **로깅**: TestLogger 사용으로 일관된 로그 출력
