@@ -603,13 +603,6 @@ class MaestroTestRunner(TestRunner):
                             comment_lines.append("⏰ 타임아웃 오류:")
                             comment_lines.append("  • 테스트 실행 시간이 300초를 초과했습니다.")
                             comment_lines.append("  • 네트워크 상태나 디바이스 성능을 확인해주세요.")
-                        
-                        # 일반적인 해결 방안 제시
-                        comment_lines.append("💡 해결 방안:")
-                        comment_lines.append("  • 디바이스 재부팅 후 재시도")
-                        comment_lines.append("  • 네트워크 연결 상태 확인")
-                        comment_lines.append("  • TVING 앱 재설치 또는 캐시 클리어")
-                        comment_lines.append("  • 첨부된 로그캣 파일 확인")
                         comment_lines.append("")
 
             # TestRail status_id 매핑

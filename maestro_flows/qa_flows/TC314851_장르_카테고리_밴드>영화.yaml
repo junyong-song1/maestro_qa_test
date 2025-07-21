@@ -21,6 +21,9 @@ appId: net.cj.cjhv.gs.tving
 - tapOn:
     id: "net.cj.cjhv.gs.tving:id/text_confirm"
 - tapOn: "티빙 로그인" 
+- extendedWaitUntil:
+    visible: "TVING ID로 시작하기"
+    timeout: 10000
 - tapOn: "TVING ID로 시작하기"
 - tapOn: "아이디"
 - inputText:
