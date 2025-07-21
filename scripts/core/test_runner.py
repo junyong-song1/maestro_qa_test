@@ -206,6 +206,56 @@ class MaestroTestRunner(TestRunner):
                 stderr=subprocess.DEVNULL
             )
             time.sleep(1)  # 프록시 준비 대기 (필요시 조정)
+            
+            # 디바이스에 프록시 설정 (API 캡처를 위해)
+            try:
+                # 현재 IP 주소 확인 (더 안정적인 방법)
+                import socket
+                
+                # 방법 1: ifconfig 사용 (macOS/Linux)
+                try:
+                    result = subprocess.run(["ifconfig"], capture_output=True, text=True, timeout=5)
+                    if result.returncode == 0:
+                        # inet 주소 찾기 (127.0.0.1 제외)
+                        lines = result.stdout.split('\n')
+                        for line in lines:
+                            if 'inet ' in line and '127.0.0.1' not in line:
+                                local_ip = line.split('inet ')[1].split(' ')[0]
+                                break
+                        else:
+                            local_ip = "127.0.0.1"  # 기본값
+                    else:
+                        local_ip = "127.0.0.1"  # 기본값
+                except:
+                    local_ip = "127.0.0.1"  # 기본값
+                
+                # 방법 2: socket 사용 (백업)
+                if local_ip == "127.0.0.1":
+                    try:
+                        # 외부 연결을 통해 실제 IP 확인
+                        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                        s.connect(("8.8.8.8", 80))
+                        local_ip = s.getsockname()[0]
+                        s.close()
+                    except:
+                        local_ip = "127.0.0.1"
+                
+                # 프록시 설정 (WiFi 프록시)
+                proxy_host = local_ip
+                proxy_port = "8080"
+                
+                logger.info(f"[{device.serial}] 프록시 설정: {proxy_host}:{proxy_port}")
+                
+                # WiFi 프록시 설정
+                subprocess.run([
+                    "adb", "-s", device.serial, "shell", "settings", "put", "global", "http_proxy", f"{proxy_host}:{proxy_port}"
+                ], check=False, timeout=10)
+                
+                logger.info(f"[{device.serial}] 프록시 설정 완료")
+                
+            except Exception as e:
+                logger.warning(f"[{device.serial}] 프록시 설정 실패: {e}")
+                # 프록시 설정 실패해도 테스트는 계속 진행
 
             # Maestro 명령 실행 (YAML 파일 경로 직접 전달)
             cmd = ["maestro", f"--device={device.serial}", "test", str(test_flow.path)]
@@ -413,6 +463,15 @@ class MaestroTestRunner(TestRunner):
                 elapsed=f"{time.time() - start_time:.2f}s"
             )
         finally:
+            # 프록시 설정 해제
+            try:
+                subprocess.run([
+                    "adb", "-s", device.serial, "shell", "settings", "put", "global", "http_proxy", ":0"
+                ], check=False, timeout=10)
+                logger.info(f"[{device.serial}] 프록시 설정 해제 완료")
+            except Exception as e:
+                logger.warning(f"[{device.serial}] 프록시 해제 실패: {e}")
+            
             # mitmdump 종료 및 API 분석
             if mitmdump_proc:
                 mitmdump_proc.terminate()
