@@ -9,3 +9,7 @@ package_name = net.cj.cjhv.gs.tving
 
 # 실제 config.ini 파일에는 본인의 API Key를 입력하세요.
 # config.ini 파일은 .gitignore에 추가되어 있으므로 git에 올라가지 않습니다.
+
+[Slack]
+webhook_url = YOUR_SLACK_WEBHOOK_URL_HERE
+channel = #qa-automation

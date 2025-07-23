@@ -45,43 +45,97 @@ def parse_mitmproxy_dump(dump_path, test_case_id, serial, model, os_version, tvi
     conn = sqlite3.connect(DB_PATH, timeout=30.0)
     # WAL 모드 재설정은 생략 (ensure_api_table에서만 시도)
     cursor = conn.cursor()
-    with open(dump_path, "rb") as logfile:
-        freader = io.FlowReader(logfile)
+    
+    processed_count = 0
+    error_count = 0
+    
+    # 방법 1: mitmproxy io.FlowReader 사용
+    try:
+        with open(dump_path, "rb") as logfile:
+            freader = io.FlowReader(logfile)
+            try:
+                for flow in freader.stream():
+                    if flow.request and flow.response:
+                        url = flow.request.pretty_url
+                        # tving.com 도메인만 저장
+                        if "tving.com" not in url:
+                            continue
+                        method = flow.request.method
+                        status_code = flow.response.status_code
+                        # timestamp_end 또는 timestamp_start가 None이면 None 처리
+                        if flow.response.timestamp_end is not None and flow.request.timestamp_start is not None:
+                            elapsed = flow.response.timestamp_end - flow.request.timestamp_start
+                        else:
+                            elapsed = None
+                        request_body = flow.request.get_text(strict=False)
+                        response_body = flow.response.get_text(strict=False)
+                        # 인코딩 에러 방지: 유니코드 치환 및 예외 처리
+                        try:
+                            if request_body is not None:
+                                request_body = request_body.encode('utf-8', 'replace').decode('utf-8', 'replace')
+                        except Exception:
+                            request_body = '[ENCODING ERROR]'
+                        try:
+                            if response_body is not None:
+                                response_body = response_body.encode('utf-8', 'replace').decode('utf-8', 'replace')
+                        except Exception:
+                            response_body = '[ENCODING ERROR]'
+                        
+                        try:
+                            cursor.execute(f"""
+                                INSERT INTO {API_TABLE} (test_case_id, serial, model, os_version, tving_version, timestamp, url, method, status_code, elapsed, request_body, response_body)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            """, (test_case_id, serial, model, os_version, tving_version, timestamp, url, method, status_code, elapsed, request_body, response_body))
+                            processed_count += 1
+                        except Exception as e:
+                            error_count += 1
+                            print(f"DB 저장 오류 (URL: {url}): {e}")
+                            
+            except FlowReadException as e:
+                print(f"[mitmproxy] FlowReadException: {e}")
+                print(f"방법 1 실패 - 방법 2 시도 중...")
+                # 방법 1 실패 시 방법 2로 전환
+                raise e
+            except Exception as e:
+                print(f"예상치 못한 오류: {e}")
+                print(f"방법 1 실패 - 방법 2 시도 중...")
+                raise e
+    except Exception as e:
+        print(f"방법 1 실패: {e}")
+        # 방법 2: 텍스트 기반 파싱 (대체 방법)
+        print(f"방법 2: 텍스트 기반 파싱 시작...")
         try:
-            for flow in freader.stream():
-                if flow.request and flow.response:
-                    url = flow.request.pretty_url
-                    # tving.com 도메인만 저장
-                    if "tving.com" not in url:
-                        continue
-                    method = flow.request.method
-                    status_code = flow.response.status_code
-                    # timestamp_end 또는 timestamp_start가 None이면 None 처리
-                    if flow.response.timestamp_end is not None and flow.request.timestamp_start is not None:
-                        elapsed = flow.response.timestamp_end - flow.request.timestamp_start
-                    else:
-                        elapsed = None
-                    request_body = flow.request.get_text(strict=False)
-                    response_body = flow.response.get_text(strict=False)
-                    # 인코딩 에러 방지: 유니코드 치환 및 예외 처리
-                    try:
-                        if request_body is not None:
-                            request_body = request_body.encode('utf-8', 'replace').decode('utf-8', 'replace')
-                    except Exception:
-                        request_body = '[ENCODING ERROR]'
-                    try:
-                        if response_body is not None:
-                            response_body = response_body.encode('utf-8', 'replace').decode('utf-8', 'replace')
-                    except Exception:
-                        response_body = '[ENCODING ERROR]'
+            with open(dump_path, 'r', encoding='utf-8', errors='ignore') as f:
+                content = f.read()
+                
+            # tving.com URL 패턴 찾기
+            import re
+            tving_urls = re.findall(r'https?://[^,\s]+tving\.com[^,\s]*', content)
+            
+            for url in tving_urls:
+                try:
+                    # 간단한 정보 추출
+                    method_match = re.search(r'method;(\d+):([A-Z]+)', content)
+                    method = method_match.group(2) if method_match else "GET"
+                    
+                    status_match = re.search(r'status_code;(\d+):(\d+)', content)
+                    status_code = int(status_match.group(2)) if status_match else 200
+                    
                     cursor.execute(f"""
                         INSERT INTO {API_TABLE} (test_case_id, serial, model, os_version, tving_version, timestamp, url, method, status_code, elapsed, request_body, response_body)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """, (test_case_id, serial, model, os_version, tving_version, timestamp, url, method, status_code, elapsed, request_body, response_body))
-        except FlowReadException as e:
-            print(f"[mitmproxy] FlowReadException: {e}")
+                    """, (test_case_id, serial, model, os_version, tving_version, timestamp, url, method, status_code, None, None, None))
+                    processed_count += 1
+                except Exception as e:
+                    error_count += 1
+                    print(f"방법 2 DB 저장 오류 (URL: {url}): {e}")
+                    
+        except Exception as e:
+            print(f"방법 2도 실패: {e}")
+    
     conn.commit()
     conn.close()
+    print(f"API 캡처 완료: 총 {processed_count}건 저장, {error_count}건 오류")
 
 if __name__ == "__main__":
     # 예시 실행: python api_capture.py dump_file test_case_id serial model os_version tving_version timestamp

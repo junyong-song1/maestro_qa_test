@@ -13,12 +13,22 @@ sys.path.insert(0, str(project_root))
 
 from scripts.core.application import QAApplication
 from scripts.utils.logger import get_logger
+from scripts.utils.log_manager import log_manager
 
 def main():
     """메인 함수"""
     logger = get_logger("Main")
     
     try:
+        # 로그 정리 수행
+        logger.info("로그 정리 시작...")
+        log_manager.cleanup_old_logs()
+        log_manager.compress_large_logs()
+        
+        # 로그 통계 출력
+        stats = log_manager.get_log_stats()
+        logger.info(f"로그 통계: {stats['file_count']}개 파일, {stats['total_size'] / (1024*1024):.1f}MB")
+        
         # QA 애플리케이션 실행
         app = QAApplication()
         app.run()

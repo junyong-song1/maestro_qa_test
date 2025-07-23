@@ -8,6 +8,10 @@ import logging
 import datetime
 import pytz
 from django.http import JsonResponse
+from django.db.models import Avg, Count, Q
+from .models import TestCase, TestRun, TestAPI
+import json
+from datetime import datetime, timedelta
 logging.basicConfig(level=logging.WARNING)
 
 def dashboard(request):
@@ -241,3 +245,111 @@ def test_result_test(request):
     except Exception as e:
         return JsonResponse({"error": str(e)})
     return JsonResponse({"results": results}, safe=False)
+
+def api_dashboard(request):
+    """API 성능 모니터링 대시보드"""
+    # 최근 7일간의 API 통계
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=7)
+    
+    # API 호출 통계
+    api_stats = TestAPI.objects.filter(
+        created_at__range=(start_date, end_date)
+    ).aggregate(
+        total_calls=Count('id'),
+        avg_response_time=Avg('elapsed'),
+        failed_calls=Count('id', filter=Q(status_code__gte=400))
+    )
+    
+    # 테스트케이스별 API 호출 수
+    test_case_api_stats = TestAPI.objects.filter(
+        created_at__range=(start_date, end_date)
+    ).values('test_case_id').annotate(
+        api_count=Count('id'),
+        avg_response=Avg('elapsed'),
+        error_count=Count('id', filter=Q(status_code__gte=400))
+    ).order_by('-api_count')[:10]
+    
+    # 시간대별 API 호출 분포
+    hourly_stats = TestAPI.objects.filter(
+        created_at__range=(start_date, end_date)
+    ).extra(
+        select={'hour': 'EXTRACT(hour FROM created_at)'}
+    ).values('hour').annotate(
+        call_count=Count('id')
+    ).order_by('hour')
+    
+    # URL별 API 호출 통계
+    url_stats = TestAPI.objects.filter(
+        created_at__range=(start_date, end_date)
+    ).values('url').annotate(
+        call_count=Count('id'),
+        avg_response=Avg('elapsed'),
+        error_rate=Count('id', filter=Q(status_code__gte=400)) * 100.0 / Count('id')
+    ).order_by('-call_count')[:20]
+    
+    context = {
+        'api_stats': api_stats,
+        'test_case_api_stats': test_case_api_stats,
+        'hourly_stats': list(hourly_stats),
+        'url_stats': url_stats,
+        'date_range': {
+            'start': start_date.strftime('%Y-%m-%d'),
+            'end': end_date.strftime('%Y-%m-%d')
+        }
+    }
+    
+    return render(request, 'qa_monitor/api_dashboard.html', context)
+
+def api_performance_chart(request):
+    """API 성능 차트 데이터 (AJAX)"""
+    days = int(request.GET.get('days', 7))
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=days)
+    
+    # 일별 API 성능 통계
+    daily_stats = TestAPI.objects.filter(
+        created_at__range=(start_date, end_date)
+    ).extra(
+        select={'date': 'DATE(created_at)'}
+    ).values('date').annotate(
+        total_calls=Count('id'),
+        avg_response_time=Avg('elapsed'),
+        error_count=Count('id', filter=Q(status_code__gte=400))
+    ).order_by('date')
+    
+    return JsonResponse({
+        'daily_stats': list(daily_stats)
+    })
+
+def api_error_analysis(request):
+    """API 오류 분석"""
+    # HTTP 상태 코드별 오류 분석
+    error_stats = TestAPI.objects.filter(
+        status_code__gte=400
+    ).values('status_code').annotate(
+        count=Count('id'),
+        avg_response_time=Avg('elapsed')
+    ).order_by('-count')
+    
+    # 오류가 발생한 URL 분석
+    error_urls = TestAPI.objects.filter(
+        status_code__gte=400
+    ).values('url', 'status_code').annotate(
+        count=Count('id')
+    ).order_by('-count')[:20]
+    
+    # 테스트케이스별 오류율
+    test_case_errors = TestAPI.objects.values('test_case_id').annotate(
+        total_calls=Count('id'),
+        error_calls=Count('id', filter=Q(status_code__gte=400)),
+        error_rate=Count('id', filter=Q(status_code__gte=400)) * 100.0 / Count('id')
+    ).filter(error_rate__gt=0).order_by('-error_rate')[:10]
+    
+    context = {
+        'error_stats': error_stats,
+        'error_urls': error_urls,
+        'test_case_errors': test_case_errors
+    }
+    
+    return render(request, 'qa_monitor/api_error_analysis.html', context)
