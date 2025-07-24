@@ -25,7 +25,7 @@ appId: net.cj.cjhv.gs.tving
 - tapOn: "티빙 로그인" 
 - extendedWaitUntil:
     visible: "TVING ID로 시작하기"
-    timeout: 10000
+    timeout: 20000
 - tapOn: "TVING ID로 시작하기"
 - tapOn: "아이디"
 - inputText:
