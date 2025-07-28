@@ -6,80 +6,81 @@ appId: net.cj.cjhv.gs.tving
 #ㆍ 선택 시 상세화면 랜딩 가능
 ---
 - launchApp:
-    appId: "net.cj.cjhv.gs.tving"
+    appId: 'net.cj.cjhv.gs.tving'
     clearState: true
-    clearKeychain: true   # optional: clear *entire* iOS keychain
+    clearKeychain: true # optional: clear *entire* iOS keychain
     stopApp: false # optional (true by default): stop the app before launching it
-    permissions: { all: allowed } # optional: by default all permissions are allowed,
-                               # even if clearState: true is passed
+    permissions:
+      { all: allow } # optional: by default all permissions are allowed,
+      # even if clearState: true is passed
 - tapOn:
-    id: "com.android.permissioncontroller:id/permission_allow_button"
+    id: 'com.android.permissioncontroller:id/permission_allow_button'
     optional: true
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/btn_accept"
+    id: 'net.cj.cjhv.gs.tving:id/btn_accept'
     optional: true
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/btn_close"
+    id: 'net.cj.cjhv.gs.tving:id/btn_close'
     optional: true
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/text_confirm"
-- tapOn: "티빙 로그인" 
+    id: 'net.cj.cjhv.gs.tving:id/text_confirm'
+- tapOn: '티빙 로그인'
 - extendedWaitUntil:
-    visible: "TVING ID로 시작하기"
+    visible: 'TVING ID로 시작하기'
     timeout: 30000
-- tapOn: "TVING ID로 시작하기"
-- tapOn: "아이디"
+- tapOn: 'TVING ID로 시작하기'
+- tapOn: '아이디'
 - inputText:
-    text: "t_principle4"
+    text: 't_principle4'
 - tapOn:
-    text: "비밀번호"
+    text: '비밀번호'
 - inputText:
-    text: "1q2w3e4r5t"
-- tapOn: "로그인하기"
+    text: '1q2w3e4r5t'
+- tapOn: '로그인하기'
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/image_thumbnail"
+    id: 'net.cj.cjhv.gs.tving:id/image_thumbnail'
     index: 0
 #Braze Popup Close
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/com_braze_inappmessage_modal_close_button"
+    id: 'net.cj.cjhv.gs.tving:id/com_braze_inappmessage_modal_close_button'
     optional: true
 - tapOn: #기술지원 팝업 Close Button
-    text: "15156557"
+    text: '15156557'
     optional: true
 - tapOn: #다운로드 메뉴의 위치 변경 안내 팝업 Close Button
-    id: "net.cj.cjhv.gs.tving:id/iv_cancel"
+    id: 'net.cj.cjhv.gs.tving:id/iv_cancel'
     optional: true
 
 # 영화
-- tapOn: "영화"
+- tapOn: '영화'
 # 배너 클릭
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/iv_thumbnail"
+    id: 'net.cj.cjhv.gs.tving:id/iv_thumbnail'
     index: 0
 
-- assertVisible: "찜"
+- assertVisible: '찜'
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/fanLayout"
+    id: 'net.cj.cjhv.gs.tving:id/fanLayout'
 - assertVisible:
-    id: "net.cj.cjhv.gs.tving:id/fanButton"
+    id: 'net.cj.cjhv.gs.tving:id/fanButton'
 
 - tapOn: 뒤로 가기
 
 #기록
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/bottom_menu5"
-- tapOn: "찜한영화"
+    id: 'net.cj.cjhv.gs.tving:id/bottom_menu5'
+- tapOn: '찜한영화'
 
 - assertVisible:
-    id: "net.cj.cjhv.gs.tving:id/itemImage"
+    id: 'net.cj.cjhv.gs.tving:id/itemImage'
     index: 0
 
 #찜한 콘텐츠 상세 진입 후 찜 제거
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/itemImage"
+    id: 'net.cj.cjhv.gs.tving:id/itemImage'
     index: 0
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/fanLayout"
-    
+    id: 'net.cj.cjhv.gs.tving:id/fanLayout'
+
 - assertVisible:
-    id: "net.cj.cjhv.gs.tving:id/fanButton"
+    id: 'net.cj.cjhv.gs.tving:id/fanButton'

@@ -9,44 +9,44 @@ appId: net.cj.cjhv.gs.tving
 #ㆍ 알럿 '확인' 버튼 선택 시, 온보딩 화면으로 이동 됨
 ---
 - tapOn: #다운로드 메뉴의 위치 변경 안내 팝업 Close Button
-    id: "net.cj.cjhv.gs.tving:id/iv_cancel"
+    id: 'net.cj.cjhv.gs.tving:id/iv_cancel'
     optional: true
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/imageMyProfile"
-- tapOn: "회원정보 수정"
+    id: 'net.cj.cjhv.gs.tving:id/imageMyProfile'
+- tapOn: '회원정보 수정'
 - tapOn:
-    id: "password"
+    id: 'password'
 - inputText:
-    text: "tving123!"
-- tapOn: "다음"
+    text: 'tving123!'
+- tapOn: '다음'
 
 - scrollUntilVisible:
-    element: "회원 탈퇴 및 계정 삭제"
+    element: '회원 탈퇴 및 계정 삭제'
     direction: DOWN
-- assertVisible: "회원 탈퇴 및 계정 삭제"
-- tapOn: "회원 탈퇴 및 계정 삭제"
+- assertVisible: '회원 탈퇴 및 계정 삭제'
+- tapOn: '회원 탈퇴 및 계정 삭제'
 - scrollUntilVisible:
-    element: "탈퇴 및 계정삭제 전 유의사항을 모두 확인했으며, 이에 동의합니다." # 찾고 싶은 요소
-    direction: DOWN 
-- assertVisible: "탈퇴 및 계정삭제 전 유의사항을 모두 확인했으며, 이에 동의합니다."
+    element: '탈퇴 및 계정삭제 전 유의사항을 모두 확인했으며, 이에 동의합니다.' # 찾고 싶은 요소
+    direction: DOWN
+- assertVisible: '탈퇴 및 계정삭제 전 유의사항을 모두 확인했으며, 이에 동의합니다.'
 - tapOn:
-    id: "agree-all"
+    id: 'agree-all'
 - scrollUntilVisible:
-    element: "확인"
+    element: '확인'
     direction: DOWN
-- assertVisible: "확인"
-- tapOn: "확인"
+- assertVisible: '확인'
+- tapOn: '확인'
 
 - scrollUntilVisible:
-    element: "기타 의견"
+    element: '기타 의견'
     direction: DOWN
-- assertVisible: "기타 의견"
+- assertVisible: '기타 의견'
 - tapOn:
-    text: "기타 의견"
+    text: '기타 의견'
     index: 1
-- tapOn: "탈퇴 사유를 자유롭게 입력해 주세요."
-- inputText: "QA Automation Test"
-- tapOn: "회원탈퇴 및 계정삭제"
-- tapOn: "확인"
-- tapOn: "확인"
-- assertVisible: "티빙 로그인"
+- tapOn: '탈퇴 사유를 자유롭게 입력해 주세요.'
+- inputText: 'QA Automation Test'
+- tapOn: '회원탈퇴 및 계정삭제'
+- tapOn: '확인'
+- tapOn: '확인'
+- assertVisible: '티빙 로그인'

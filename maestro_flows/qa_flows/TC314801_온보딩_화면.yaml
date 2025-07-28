@@ -5,33 +5,34 @@ appId: net.cj.cjhv.gs.tving
 #ㆍ 3개 페이지 노출 확인
 ---
 - launchApp:
-    appId: "net.cj.cjhv.gs.tving"
+    appId: 'net.cj.cjhv.gs.tving'
     clearState: true
-    clearKeychain: true   # optional: clear *entire* iOS keychain
+    clearKeychain: true # optional: clear *entire* iOS keychain
     stopApp: false # optional (true by default): stop the app before launching it
-    permissions: { all: allowed } # optional: by default all permissions are allowed,
-                               # even if clearState: true is passed
+    permissions:
+      { all: allow } # optional: by default all permissions are allowed,
+      # even if clearState: true is passed
 - tapOn:
-    id: "com.android.permissioncontroller:id/permission_allow_button"
+    id: 'com.android.permissioncontroller:id/permission_allow_button'
     optional: true
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/btn_accept"
+    id: 'net.cj.cjhv.gs.tving:id/btn_accept'
     optional: true
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/btn_close"
+    id: 'net.cj.cjhv.gs.tving:id/btn_close'
     optional: true
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/text_confirm"
+    id: 'net.cj.cjhv.gs.tving:id/text_confirm'
 - assertVisible:
-    id: "net.cj.cjhv.gs.tving:id/img_tutorial_1"    
-- swipe:              # This command swipes in the left direction from the middle of the device. 
+    id: 'net.cj.cjhv.gs.tving:id/img_tutorial_1'
+- swipe: # This command swipes in the left direction from the middle of the device.
     direction: LEFT
 - assertVisible:
-    id: "net.cj.cjhv.gs.tving:id/img_tutorial_2"    
-- swipe:              # This command swipes in the left direction from the middle of the device. 
+    id: 'net.cj.cjhv.gs.tving:id/img_tutorial_2'
+- swipe: # This command swipes in the left direction from the middle of the device.
     direction: LEFT
 - assertVisible:
-    id: "net.cj.cjhv.gs.tving:id/img_tutorial_3"
-- swipe:              # This command swipes in the left direction from the middle of the device. 
+    id: 'net.cj.cjhv.gs.tving:id/img_tutorial_3'
+- swipe: # This command swipes in the left direction from the middle of the device.
     direction: LEFT
-- tapOn: "티빙 로그인" 
+- tapOn: '티빙 로그인'

@@ -4,179 +4,176 @@ appId: net.cj.cjhv.gs.tving
 #로그인 후 홈화면 진입 가능함
 ---
 - launchApp:
-    appId: "net.cj.cjhv.gs.tving"
+    appId: 'net.cj.cjhv.gs.tving'
     clearState: true
-    clearKeychain: true   # optional: clear *entire* iOS keychain
+    clearKeychain: true # optional: clear *entire* iOS keychain
     stopApp: false # optional (true by default): stop the app before launching it
-    permissions: { all: allowed } # optional: by default all permissions are allowed,
-                               # even if clearState: true is passed
+    permissions:
+      { all: allow } # optional: by default all permissions are allowed,
+      # even if clearState: true is passed
 - tapOn:
-    id: "com.android.permissioncontroller:id/permission_allow_button"
+    id: 'com.android.permissioncontroller:id/permission_allow_button'
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/btn_accept"
+    id: 'net.cj.cjhv.gs.tving:id/btn_accept'
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/btn_close"
+    id: 'net.cj.cjhv.gs.tving:id/btn_close'
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/text_confirm"
-- tapOn: "티빙 로그인" 
-- tapOn: "네이버로 시작하기"
+    id: 'net.cj.cjhv.gs.tving:id/text_confirm'
+- tapOn: '티빙 로그인'
+- tapOn: '네이버로 시작하기'
 #네이버
 - tapOn:
-    id: "input_item_id"
+    id: 'input_item_id'
 - inputText:
-    text: "principle486"
+    text: 'principle486'
 - tapOn:
-    id: "input_item_pw"
+    id: 'input_item_pw'
 - inputText:
-    text: "A1qaz2wsx@"
-- tapOn: "로그인"
-- tapOn: "등록"
-- tapOn: 
-    text: "전체 동의하기"
+    text: 'A1qaz2wsx@'
+- tapOn: '로그인'
+- tapOn: '등록'
+- tapOn:
+    text: '전체 동의하기'
     optional: true
-- tapOn: 
-   text : "동의하기"
-   optional: true
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/image_thumbnail"
+    text: '동의하기'
+    optional: true
+- tapOn:
+    id: 'net.cj.cjhv.gs.tving:id/image_thumbnail'
     index: 0
     optional: true
 - tapOn: #기술지원 팝업 Close Button
-    text: "15156557"
+    text: '15156557'
     optional: true
 - tapOn: #다운로드 메뉴의 위치 변경 안내 팝업 Close Button
-    id: "net.cj.cjhv.gs.tving:id/iv_cancel"
+    id: 'net.cj.cjhv.gs.tving:id/iv_cancel'
     optional: true
-- assertVisible: "드라마"
-- assertVisible: "예능"
-- assertVisible: "영화"
+- assertVisible: '드라마'
+- assertVisible: '예능'
+- assertVisible: '영화'
 - stopApp
 
-
 - launchApp:
-    appId: "net.cj.cjhv.gs.tving"
+    appId: 'net.cj.cjhv.gs.tving'
     clearState: true
-    clearKeychain: true   # optional: clear *entire* iOS keychain
+    clearKeychain: true # optional: clear *entire* iOS keychain
     stopApp: false # optional (true by default): stop the app before launching it
-    permissions: { all: allowed } # optional: by default all permissions are allowed,
-                               # even if clearState: true is passed
+    permissions:
+      { all: allowed } # optional: by default all permissions are allowed,
+      # even if clearState: true is passed
 - tapOn:
-    id: "com.android.permissioncontroller:id/permission_allow_button"
+    id: 'com.android.permissioncontroller:id/permission_allow_button'
     optional: true
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/btn_accept"
+    id: 'net.cj.cjhv.gs.tving:id/btn_accept'
     optional: true
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/btn_close"
+    id: 'net.cj.cjhv.gs.tving:id/btn_close'
     optional: true
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/text_confirm"
-- tapOn: "티빙 로그인" 
-- tapOn: "카카오로 시작하기"
+    id: 'net.cj.cjhv.gs.tving:id/text_confirm'
+- tapOn: '티빙 로그인'
+- tapOn: '카카오로 시작하기'
 #카카오
 - tapOn:
-    id: "loginId--1"
+    id: 'loginId--1'
 - inputText:
-    text: "principle345@gmail.com"
+    text: 'principle345@gmail.com'
 - tapOn:
-    id: "password--2"
+    id: 'password--2'
 - inputText:
-    text: "Athdwnsdyd5637#"    
-- tapOn: "로그인"
-
-- tapOn: 
-    text: "전체 동의하기"
-    optional: true
-- tapOn: 
-    text: "동의하고 계속하기"
-    optional: true
-- tapOn: 
-    text: "한 번 받아볼게요"
-    optional: true
-- tapOn: 
-    text: "확인"
-    optional: true
-- tapOn: 
-    text: "나중에 하기"
-    optional: true
+    text: 'Athdwnsdyd5637#'
+- tapOn: '로그인'
 
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/image_thumbnail"
+    text: '전체 동의하기'
+    optional: true
+- tapOn:
+    text: '동의하고 계속하기'
+    optional: true
+- tapOn:
+    text: '한 번 받아볼게요'
+    optional: true
+- tapOn:
+    text: '확인'
+    optional: true
+- tapOn:
+    text: '나중에 하기'
+    optional: true
+
+- tapOn:
+    id: 'net.cj.cjhv.gs.tving:id/image_thumbnail'
     index: 0
     optional: true
 - tapOn: #기술지원 팝업 Close Button
-    text: "15156557"
+    text: '15156557'
     optional: true
 - tapOn: #다운로드 메뉴의 위치 변경 안내 팝업 Close Button
-    id: "net.cj.cjhv.gs.tving:id/iv_cancel"
+    id: 'net.cj.cjhv.gs.tving:id/iv_cancel'
     optional: true
-- assertVisible: "드라마"
-- assertVisible: "예능"
-- assertVisible: "영화"
+- assertVisible: '드라마'
+- assertVisible: '예능'
+- assertVisible: '영화'
 - stopApp
-
-
 
 - launchApp:
-    appId: "net.cj.cjhv.gs.tving"
+    appId: 'net.cj.cjhv.gs.tving'
     clearState: true
-    clearKeychain: true   # optional: clear *entire* iOS keychain
+    clearKeychain: true # optional: clear *entire* iOS keychain
     stopApp: false # optional (true by default): stop the app before launching it
-    permissions: { all: allowed } # optional: by default all permissions are allowed,
-                               # even if clearState: true is passed
+    permissions:
+      { all: allowed } # optional: by default all permissions are allowed,
+      # even if clearState: true is passed
 - tapOn:
-    id: "com.android.permissioncontroller:id/permission_allow_button"
+    id: 'com.android.permissioncontroller:id/permission_allow_button'
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/btn_accept"
+    id: 'net.cj.cjhv.gs.tving:id/btn_accept'
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/btn_close"
+    id: 'net.cj.cjhv.gs.tving:id/btn_close'
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/text_confirm"
-- tapOn: "티빙 로그인" 
-- tapOn: "Apple로 계속하기"
+    id: 'net.cj.cjhv.gs.tving:id/text_confirm'
+- tapOn: '티빙 로그인'
+- tapOn: 'Apple로 계속하기'
 #Apple
 - tapOn:
-    id: "account_name_text_field"
+    id: 'account_name_text_field'
 - inputText:
-    text: "principle345@gmail.com"
+    text: 'principle345@gmail.com'
 - tapOn:
-    id: "sign-in"
+    id: 'sign-in'
 - tapOn:
-    id: "password_text_field"
+    id: 'password_text_field'
 - inputText:
-    text: "A1qaz2wsx#"
+    text: 'A1qaz2wsx#'
 - tapOn:
-    id: "sign-in"    
-- tapOn: "입력 필드에 확인 코드를 입력하면 초점이 다음 입력 필드로 자동으로 이동합니다"    
+    id: 'sign-in'
+- tapOn: '입력 필드에 확인 코드를 입력하면 초점이 다음 입력 필드로 자동으로 이동합니다'
 - tapOn:
-    id: "com.touchtype.swiftkey:id/inline_suggestions_surface"
-- tapOn: "신뢰함"
+    id: 'com.touchtype.swiftkey:id/inline_suggestions_surface'
+- tapOn: '신뢰함'
 
-- tapOn: "계속"
+- tapOn: '계속'
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/image_thumbnail"
+    id: 'net.cj.cjhv.gs.tving:id/image_thumbnail'
     index: 0
     optional: true
 - tapOn: #기술지원 팝업 Close Button
-    text: "15156557"
+    text: '15156557'
     optional: true
 - tapOn: #다운로드 메뉴의 위치 변경 안내 팝업 Close Button
-    id: "net.cj.cjhv.gs.tving:id/iv_cancel"
+    id: 'net.cj.cjhv.gs.tving:id/iv_cancel'
     optional: true
-- assertVisible: "드라마"
-- assertVisible: "예능"
-- assertVisible: "영화"
+- assertVisible: '드라마'
+- assertVisible: '예능'
+- assertVisible: '영화'
 - stopApp
-
-
-
 #- launchApp:
 #    appId: "net.cj.cjhv.gs.tving"
 #    clearState: true
 #    clearKeychain: true   # optional: clear *entire* iOS keychain
 #    stopApp: false # optional (true by default): stop the app before launching it
 #    permissions: { all: allowed } # optional: by default all permissions are allowed,
-                               # even if clearState: true is passed
+# even if clearState: true is passed
 #- tapOn:
 #    id: "com.android.permissioncontroller:id/permission_allow_button"
 #- tapOn:
@@ -185,7 +182,7 @@ appId: net.cj.cjhv.gs.tving
 #    id: "net.cj.cjhv.gs.tving:id/btn_close"
 #- tapOn:
 #    id: "net.cj.cjhv.gs.tving:id/text_confirm"
-#- tapOn: "티빙 로그인" 
+#- tapOn: "티빙 로그인"
 #- tapOn: "X(구 트위터)로 시작하기"
 #X (회원가입 23년 09/19일부터 지원 종료 회원가입된 로그인 아이디 필요)
 #- tapOn:
@@ -202,6 +199,5 @@ appId: net.cj.cjhv.gs.tving
 #- tapOn:
 #    id: "allow"
 #- tapOn: "확인"
-
 
 #페이스북 로그인 maestro select Issue

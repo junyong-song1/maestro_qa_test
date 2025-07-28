@@ -6,117 +6,106 @@ appId: net.cj.cjhv.gs.tving
 #ㆍ 상단에 스페셜관 배경 이미지 노출
 ---
 - launchApp:
-    appId: "net.cj.cjhv.gs.tving"
+    appId: 'net.cj.cjhv.gs.tving'
     clearState: true
-    clearKeychain: true   # optional: clear *entire* iOS keychain
+    clearKeychain: true # optional: clear *entire* iOS keychain
     stopApp: false # optional (true by default): stop the app before launching it
-    permissions: { all: allowed } # optional: by default all permissions are allowed,
-                               # even if clearState: true is passed
+    permissions:
+      { all: allow } # optional: by default all permissions are allowed,
+      # even if clearState: true is passed
 - tapOn:
-    id: "com.android.permissioncontroller:id/permission_allow_button"
+    id: 'com.android.permissioncontroller:id/permission_allow_button'
     optional: true
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/btn_accept"
+    id: 'net.cj.cjhv.gs.tving:id/btn_accept'
     optional: true
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/btn_close"
+    id: 'net.cj.cjhv.gs.tving:id/btn_close'
     optional: true
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/text_confirm"
-- tapOn: "티빙 로그인" 
+    id: 'net.cj.cjhv.gs.tving:id/text_confirm'
+- tapOn: '티빙 로그인'
 - extendedWaitUntil:
-    visible: "TVING ID로 시작하기"
+    visible: 'TVING ID로 시작하기'
     timeout: 30000
-- tapOn: "TVING ID로 시작하기"
-- tapOn: "아이디"
+- tapOn: 'TVING ID로 시작하기'
+- tapOn: '아이디'
 - inputText:
-    text: "t_principle4"
+    text: 't_principle4'
 - tapOn:
-    text: "비밀번호"
+    text: '비밀번호'
 - inputText:
-    text: "1q2w3e4r5t"
-- tapOn: "로그인하기"
+    text: '1q2w3e4r5t'
+- tapOn: '로그인하기'
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/image_thumbnail"
+    id: 'net.cj.cjhv.gs.tving:id/image_thumbnail'
     index: 0
 - tapOn: #기술지원 팝업 Close Button
-    text: "15156557"
+    text: '15156557'
     optional: true
 - tapOn: #다운로드 메뉴의 위치 변경 안내 팝업 Close Button
-    id: "net.cj.cjhv.gs.tving:id/iv_cancel"
+    id: 'net.cj.cjhv.gs.tving:id/iv_cancel'
     optional: true
 
 # 영화 메뉴 진입
-- tapOn: "영화"
+- tapOn: '영화'
 # 드라마 진입 확인
 - tapOn:
-    text: "드라마"
+    text: '드라마'
     index: 1
-# 첫번째 콘텐츠 상세 
+# 첫번째 콘텐츠 상세
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/iv_thumbnail"
+    id: 'net.cj.cjhv.gs.tving:id/iv_thumbnail'
     index: 1
 
 # 상세진입 확인
-- assertVisible: "찜"
-- assertVisible: "공유"
-- assertVisible: "다운로드"
+- assertVisible: '찜'
+- assertVisible: '공유'
+- assertVisible: '다운로드'
 
 # 다운로드 클릭
-- tapOn: "다운로드"
-- tapOn: "확인"
+- tapOn: '다운로드'
+- tapOn: '확인'
 
 # 프로그레스바, 다운로드 진행중 확인
 - assertVisible:
-    id: "net.cj.cjhv.gs.tving:id/imgCircleProgressBarBg"
-- assertVisible: "다운로드 중"
+    id: 'net.cj.cjhv.gs.tving:id/imgCircleProgressBarBg'
+- assertVisible: '다운로드 중'
 
 - extendedWaitUntil:
     visible:
       # 옵션 1: "다운로드 완료"와 같은 텍스트가 나타날 때
-      text: ".*다운로드 완료.*" 
+      text: '.*다운로드 완료.*'
       # 옵션 2: 다운로드 버튼이 재생 버튼으로 바뀔 때
       # id: "play_button_after_download"
-    timeout: 600000 
+    timeout: 600000
 
 # 다운로드 콘텐츠 재생
-- tapOn: "다운로드 재생"
+- tapOn: '다운로드 재생'
 # 플레이어 진입 확인
 - assertVisible:
-    id: "net.cj.cjhv.gs.tving:id/surface_view"
-
+    id: 'net.cj.cjhv.gs.tving:id/surface_view'
 
 #다운로드 콘텐츠 삭제
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/surface_view"
-- tapOn: "뒤로 가기"
+    id: 'net.cj.cjhv.gs.tving:id/surface_view'
+- tapOn: '뒤로 가기'
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/layout_container"
-- tapOn: "뒤로 가기"
+    id: 'net.cj.cjhv.gs.tving:id/layout_container'
+- tapOn: '뒤로 가기'
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/layout_top_title"
-- tapOn: "뒤로 가기"
+    id: 'net.cj.cjhv.gs.tving:id/layout_top_title'
+- tapOn: '뒤로 가기'
 
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/bottom_menu1"
+    id: 'net.cj.cjhv.gs.tving:id/bottom_menu1'
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/imageMyProfile"
-- tapOn: "다운로드"
-- tapOn: "편집하기"
+    id: 'net.cj.cjhv.gs.tving:id/imageMyProfile'
+- tapOn: '다운로드'
+- tapOn: '편집하기'
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/image_select_check"
+    id: 'net.cj.cjhv.gs.tving:id/image_select_check'
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/layout_delete_selected_items"
+    id: 'net.cj.cjhv.gs.tving:id/layout_delete_selected_items'
 
-- assertVisible: "다운로드 가능한 콘텐츠 보기"
-
-
-
-
-
-
-
-
-
-
-
+- assertVisible: '다운로드 가능한 콘텐츠 보기'

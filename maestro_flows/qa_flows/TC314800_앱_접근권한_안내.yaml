@@ -5,21 +5,22 @@ appId: net.cj.cjhv.gs.tving
 #ㆍ 스플래시 노출 후, 앱 접근권한 안내 페이지 노출 됨
 ---
 - launchApp:
-    appId: "net.cj.cjhv.gs.tving"
+    appId: 'net.cj.cjhv.gs.tving'
     clearState: true
-    clearKeychain: true   # optional: clear *entire* iOS keychain
+    clearKeychain: true # optional: clear *entire* iOS keychain
     stopApp: false # optional (true by default): stop the app before launching it
-    permissions: { all: allowed } # optional: by default all permissions are allowed,
-                               # even if clearState: true is passed
+    permissions:
+      { all: allow } # optional: by default all permissions are allowed,
+      # even if clearState: true is passed
 - tapOn:
-    id: "com.android.permissioncontroller:id/permission_allow_button"
+    id: 'com.android.permissioncontroller:id/permission_allow_button'
     optional: true
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/btn_accept"
+    id: 'net.cj.cjhv.gs.tving:id/btn_accept'
     optional: true
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/btn_close"
+    id: 'net.cj.cjhv.gs.tving:id/btn_close'
     optional: true
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/text_confirm"
-- assertVisible: "티빙 로그인"
+    id: 'net.cj.cjhv.gs.tving:id/text_confirm'
+- assertVisible: '티빙 로그인'

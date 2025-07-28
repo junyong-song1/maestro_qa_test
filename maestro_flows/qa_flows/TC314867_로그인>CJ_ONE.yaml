@@ -3,42 +3,43 @@ appId: net.cj.cjhv.gs.tving
 #로그인 후 홈화면 진입 가능함
 ---
 - launchApp:
-    appId: "net.cj.cjhv.gs.tving"
+    appId: 'net.cj.cjhv.gs.tving'
     clearState: true
-    clearKeychain: true   # optional: clear *entire* iOS keychain
+    clearKeychain: true # optional: clear *entire* iOS keychain
     stopApp: false # optional (true by default): stop the app before launching it
-    permissions: { all: allowed } # optional: by default all permissions are allowed,
-                               # even if clearState: true is passed
+    permissions:
+      { all: allow } # optional: by default all permissions are allowed,
+      # even if clearState: true is passed
 - tapOn:
-    id: "com.android.permissioncontroller:id/permission_allow_button"
+    id: 'com.android.permissioncontroller:id/permission_allow_button'
     optional: true
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/btn_accept"
+    id: 'net.cj.cjhv.gs.tving:id/btn_accept'
     optional: true
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/btn_close"
+    id: 'net.cj.cjhv.gs.tving:id/btn_close'
     optional: true
 - tapOn:
-    id: "net.cj.cjhv.gs.tving:id/text_confirm"
-- tapOn: "티빙 로그인" 
+    id: 'net.cj.cjhv.gs.tving:id/text_confirm'
+- tapOn: '티빙 로그인'
 - extendedWaitUntil:
-    visible: "CJ ONE으로 시작하기"
+    visible: 'CJ ONE으로 시작하기'
     timeout: 30000
-- tapOn: "CJ ONE으로 시작하기"
-- tapOn: "아이디"
+- tapOn: 'CJ ONE으로 시작하기'
+- tapOn: '아이디'
 - inputText:
-    text: "principle486"
+    text: 'principle486'
 - tapOn:
-    text: "비밀번호"
+    text: '비밀번호'
 - inputText:
-    text: "A1qaz2wsx#"
-- tapOn: "로그인하기"
+    text: 'A1qaz2wsx#'
+- tapOn: '로그인하기'
 - tapOn: #이용권이 있으면 프로필 선택가능
-    id: "net.cj.cjhv.gs.tving:id/image_thumbnail"
+    id: 'net.cj.cjhv.gs.tving:id/image_thumbnail'
     index: 0
     optional: true
 - tapOn: #기술지원 팝업 Close Button
-    text: "15156557"
+    text: '15156557'
     optional: true
 - tapOn: #다운로드 메뉴의 위치 변경 안내 팝업 Close Button
-    id: "net.cj.cjhv.gs.tving:id/iv_cancel"
+    id: 'net.cj.cjhv.gs.tving:id/iv_cancel'
