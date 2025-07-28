@@ -1,0 +1,275 @@
+{% extends 'qa_monitor/base_new.html' %}
+
+{% block title %}API 성능 대시보드 - QA 자동화 대시보드{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="mb-8">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <h2 class="text-3xl font-bold text-gray-900">API 성능 대시보드</h2>
+            <p class="mt-2 text-gray-600">API 호출 현황 및 성능 분석</p>
+        </div>
+        <div class="mt-4 sm:mt-0">
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                {{ date_range.start }} ~ {{ date_range.end }}
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Key Metrics -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <!-- Total API Calls -->
+    <div class="metric-card">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="metric-label">총 API 호출</p>
+                <p class="metric-value">{{ api_stats.total_calls|floatformat:0 }}</p>
+                <p class="metric-change metric-change-positive mt-2">
+                    <svg class="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clip-rule="evenodd"></path>
+                    </svg>
+                    +2.5%
+                </p>
+            </div>
+            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Rate -->
+    <div class="metric-card">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="metric-label">성공률</p>
+                <p class="metric-value">{{ api_stats.success_rate|floatformat:1 }}%</p>
+                <p class="metric-change metric-change-positive mt-2">
+                    <svg class="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clip-rule="evenodd"></path>
+                    </svg>
+                    +1.2%
+                </p>
+            </div>
+            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- Average Response Time -->
+    <div class="metric-card">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="metric-label">평균 응답시간</p>
+                <p class="metric-value">{{ api_stats.avg_response_time|floatformat:2 }}초</p>
+                <p class="metric-change metric-change-negative mt-2">
+                    <svg class="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M12 13a1 1 0 100 2h5a1 1 0 001-1v-5a1 1 0 10-2 0v2.586l-4.293-4.293a1 1 0 00-1.414 0L8 9.586l-4.293-4.293a1 1 0 00-1.414 1.414l5 5a1 1 0 001.414 0L11 9.414 14.586 13H12z" clip-rule="evenodd"></path>
+                    </svg>
+                    -0.3초
+                </p>
+            </div>
+            <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Count -->
+    <div class="metric-card">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="metric-label">오류 수</p>
+                <p class="metric-value">{{ api_stats.failed_calls|floatformat:0 }}</p>
+                <p class="metric-change metric-change-negative mt-2">
+                    <svg class="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M12 13a1 1 0 100 2h5a1 1 0 001-1v-5a1 1 0 10-2 0v2.586l-4.293-4.293a1 1 0 00-1.414 0L8 9.586l-4.293-4.293a1 1 0 00-1.414 1.414l5 5a1 1 0 001.414 0L11 9.414 14.586 13H12z" clip-rule="evenodd"></path>
+                    </svg>
+                    +5.2%
+                </p>
+            </div>
+            <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+    <!-- Hourly API Call Distribution -->
+    <div class="lg:col-span-2">
+        <div class="chart-container">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-semibold text-gray-900">시간대별 API 호출 분포</h3>
+            </div>
+            <div class="h-80">
+                <canvas id="hourlyChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test Case API Calls -->
+    <div class="lg:col-span-1">
+        <div class="chart-container">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-semibold text-gray-900">테스트케이스별 API 호출</h3>
+            </div>
+            <div class="space-y-4">
+                {% for stat in test_case_api_stats %}
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <span class="text-sm font-medium text-blue-600">{{ forloop.counter }}</span>
+                        </div>
+                        <div>
+                            <h5 class="text-sm font-medium text-gray-900">{{ stat.test_case_id }}</h5>
+                            <p class="text-xs text-gray-600">{{ stat.avg_response_time|floatformat:2 }}초 평균</p>
+                        </div>
+                    </div>
+                    <span class="text-sm font-bold text-gray-900">{{ stat.api_count }}</span>
+                </div>
+                {% empty %}
+                <div class="text-center py-8">
+                    <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    <p class="text-gray-500">데이터가 없습니다.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- URL Statistics Table -->
+<div class="table-container">
+    <div class="table-header">
+        <h3 class="text-lg font-semibold text-gray-900">URL별 API 호출 통계</h3>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="table-cell text-left font-medium text-gray-900">URL</th>
+                    <th class="table-cell text-right font-medium text-gray-900">호출 수</th>
+                    <th class="table-cell text-right font-medium text-gray-900">평균 응답시간</th>
+                    <th class="table-cell text-right font-medium text-gray-900">오류율</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for url_stat in url_stats %}
+                <tr class="table-row">
+                    <td class="table-cell text-gray-900">
+                        <div class="max-w-xs truncate" title="{{ url_stat.url }}">
+                            {{ url_stat.url }}
+                        </div>
+                    </td>
+                    <td class="table-cell text-right font-medium text-gray-900">
+                        {{ url_stat.call_count }}
+                    </td>
+                    <td class="table-cell text-right text-gray-600">
+                        {{ url_stat.avg_response|floatformat:2 }}초
+                    </td>
+                    <td class="table-cell text-right">
+                        <span class="badge {% if url_stat.error_rate > 10 %}badge-error{% elif url_stat.error_rate > 5 %}badge-warning{% else %}badge-success{% endif %}">
+                            {{ url_stat.error_rate|floatformat:1 }}%
+                        </span>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="table-cell text-center text-gray-500 py-8">
+                        <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                        <p>데이터가 없습니다.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Hourly Chart
+    const hourlyCtx = document.getElementById('hourlyChart').getContext('2d');
+    const hourlyData = {{ hourly_stats|safe }};
+    
+    new Chart(hourlyCtx, {
+        type: 'line',
+        data: {
+            labels: hourlyData.map(item => item.hour + '시'),
+            datasets: [{
+                label: 'API 호출 수',
+                data: hourlyData.map(item => item.call_count),
+                borderColor: '#3B82F6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#3B82F6',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                pointRadius: 6,
+                pointHoverRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.1)',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: '#6B7280',
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        color: '#6B7280',
+                        font: {
+                            size: 12
+                        }
+                    }
+                }
+            },
+            elements: {
+                point: {
+                    hoverBackgroundColor: '#3B82F6'
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %} 

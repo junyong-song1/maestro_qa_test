@@ -35,7 +35,7 @@ class TestAPI(models.Model):
     elapsed = models.FloatField()  # 응답 시간 (초)
     request_size = models.IntegerField(default=0)
     response_size = models.IntegerField(default=0)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(default=timezone.now)
     
     def __str__(self):
         return f"API {self.method} {self.url} ({self.status_code})"

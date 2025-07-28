@@ -248,50 +248,111 @@ def test_result_test(request):
 
 def api_dashboard(request):
     """API 성능 모니터링 대시보드"""
+    from scripts.utils.testlog_db import get_db_connection
+    
     # 최근 7일간의 API 통계
     end_date = datetime.now()
     start_date = end_date - timedelta(days=7)
     
-    # API 호출 통계
-    api_stats = TestAPI.objects.filter(
-        created_at__range=(start_date, end_date)
-    ).aggregate(
-        total_calls=Count('id'),
-        avg_response_time=Avg('elapsed'),
-        failed_calls=Count('id', filter=Q(status_code__gte=400))
-    )
-    
-    # 테스트케이스별 API 호출 수
-    test_case_api_stats = TestAPI.objects.filter(
-        created_at__range=(start_date, end_date)
-    ).values('test_case_id').annotate(
-        api_count=Count('id'),
-        avg_response=Avg('elapsed'),
-        error_count=Count('id', filter=Q(status_code__gte=400))
-    ).order_by('-api_count')[:10]
-    
-    # 시간대별 API 호출 분포
-    hourly_stats = TestAPI.objects.filter(
-        created_at__range=(start_date, end_date)
-    ).extra(
-        select={'hour': 'EXTRACT(hour FROM created_at)'}
-    ).values('hour').annotate(
-        call_count=Count('id')
-    ).order_by('hour')
-    
-    # URL별 API 호출 통계
-    url_stats = TestAPI.objects.filter(
-        created_at__range=(start_date, end_date)
-    ).values('url').annotate(
-        call_count=Count('id'),
-        avg_response=Avg('elapsed'),
-        error_rate=Count('id', filter=Q(status_code__gte=400)) * 100.0 / Count('id')
-    ).order_by('-call_count')[:20]
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # API 호출 통계
+        cursor.execute("""
+            SELECT 
+                COUNT(*) as total_calls,
+                AVG(elapsed) as avg_response_time,
+                COUNT(CASE WHEN status_code >= 400 THEN 1 END) as failed_calls
+            FROM test_api 
+            WHERE created_at BETWEEN ? AND ?
+        """, (start_date.isoformat(), end_date.isoformat()))
+        
+        api_stats_row = cursor.fetchone()
+        api_stats = {
+            'total_calls': api_stats_row[0] or 0,
+            'avg_response_time': api_stats_row[1] or 0,
+            'failed_calls': api_stats_row[2] or 0
+        }
+        
+        # 성공률 계산
+        if api_stats['total_calls'] > 0:
+            api_stats['success_rate'] = ((api_stats['total_calls'] - api_stats['failed_calls']) / api_stats['total_calls']) * 100
+        else:
+            api_stats['success_rate'] = 0
+        
+        # 테스트케이스별 API 호출 수
+        cursor.execute("""
+            SELECT 
+                test_case_id,
+                COUNT(*) as api_count,
+                AVG(elapsed) as avg_response_time
+            FROM test_api 
+            WHERE created_at BETWEEN ? AND ?
+            GROUP BY test_case_id
+            ORDER BY api_count DESC
+            LIMIT 10
+        """, (start_date.isoformat(), end_date.isoformat()))
+        
+        test_case_api_stats = []
+        for row in cursor.fetchall():
+            test_case_api_stats.append({
+                'test_case_id': row[0],
+                'api_count': row[1],
+                'avg_response_time': row[2] or 0
+            })
+        
+        # 시간대별 API 호출 분포
+        hourly_stats = []
+        for hour in range(24):
+            cursor.execute("""
+                SELECT COUNT(*) FROM test_api 
+                WHERE created_at BETWEEN ? AND ?
+                AND strftime('%H', created_at) = ?
+            """, (start_date.isoformat(), end_date.isoformat(), f"{hour:02d}"))
+            
+            hour_count = cursor.fetchone()[0]
+            hourly_stats.append({
+                'hour': hour,
+                'call_count': hour_count
+            })
+        
+        # URL별 API 호출 통계
+        cursor.execute("""
+            SELECT 
+                url,
+                COUNT(*) as call_count,
+                AVG(elapsed) as avg_response,
+                (COUNT(CASE WHEN status_code >= 400 THEN 1 END) * 100.0 / COUNT(*)) as error_rate
+            FROM test_api 
+            WHERE created_at BETWEEN ? AND ?
+            GROUP BY url
+            ORDER BY call_count DESC
+            LIMIT 20
+        """, (start_date.isoformat(), end_date.isoformat()))
+        
+        url_stats = []
+        for row in cursor.fetchall():
+            url_stats.append({
+                'url': row[0],
+                'call_count': row[1],
+                'avg_response': row[2] or 0,
+                'error_rate': row[3] or 0
+            })
+        
+        conn.close()
+        
+    except Exception as e:
+        # 오류 발생 시 빈 데이터 반환
+        api_stats = {'total_calls': 0, 'avg_response_time': 0, 'failed_calls': 0, 'success_rate': 0}
+        test_case_api_stats = []
+        hourly_stats = []
+        url_stats = []
     
     context = {
         'api_stats': api_stats,
         'test_case_api_stats': test_case_api_stats,
-        'hourly_stats': list(hourly_stats),
+        'hourly_stats': hourly_stats,
         'url_stats': url_stats,
         'date_range': {
             'start': start_date.strftime('%Y-%m-%d'),
@@ -299,7 +360,7 @@ def api_dashboard(request):
         }
     }
     
-    return render(request, 'qa_monitor/api_dashboard.html', context)
+    return render(request, 'qa_monitor/api_dashboard_new.html', context)
 
 def api_performance_chart(request):
     """API 성능 차트 데이터 (AJAX)"""
@@ -307,44 +368,114 @@ def api_performance_chart(request):
     end_date = datetime.now()
     start_date = end_date - timedelta(days=days)
     
-    # 일별 API 성능 통계
-    daily_stats = TestAPI.objects.filter(
-        created_at__range=(start_date, end_date)
-    ).extra(
-        select={'date': 'DATE(created_at)'}
-    ).values('date').annotate(
-        total_calls=Count('id'),
-        avg_response_time=Avg('elapsed'),
-        error_count=Count('id', filter=Q(status_code__gte=400))
-    ).order_by('date')
+    # 일별 API 성능 통계 (간단한 방식으로 변경)
+    daily_stats = []
+    current_date = start_date.date()
+    end_date_only = end_date.date()
+    
+    while current_date <= end_date_only:
+        day_start = datetime.combine(current_date, datetime.min.time())
+        day_end = datetime.combine(current_date, datetime.max.time())
+        
+        day_data = TestAPI.objects.filter(
+            created_at__range=(day_start, day_end)
+        ).aggregate(
+            total_calls=Count('id'),
+            avg_response_time=Avg('elapsed'),
+            error_count=Count('id', filter=Q(status_code__gte=400))
+        )
+        
+        daily_stats.append({
+            'date': current_date.strftime('%Y-%m-%d'),
+            'total_calls': day_data['total_calls'] or 0,
+            'avg_response_time': day_data['avg_response_time'] or 0,
+            'error_count': day_data['error_count'] or 0
+        })
+        
+        current_date += timedelta(days=1)
     
     return JsonResponse({
-        'daily_stats': list(daily_stats)
+        'daily_stats': daily_stats
     })
 
 def api_error_analysis(request):
     """API 오류 분석"""
-    # HTTP 상태 코드별 오류 분석
-    error_stats = TestAPI.objects.filter(
-        status_code__gte=400
-    ).values('status_code').annotate(
-        count=Count('id'),
-        avg_response_time=Avg('elapsed')
-    ).order_by('-count')
+    from scripts.utils.testlog_db import get_db_connection
     
-    # 오류가 발생한 URL 분석
-    error_urls = TestAPI.objects.filter(
-        status_code__gte=400
-    ).values('url', 'status_code').annotate(
-        count=Count('id')
-    ).order_by('-count')[:20]
-    
-    # 테스트케이스별 오류율
-    test_case_errors = TestAPI.objects.values('test_case_id').annotate(
-        total_calls=Count('id'),
-        error_calls=Count('id', filter=Q(status_code__gte=400)),
-        error_rate=Count('id', filter=Q(status_code__gte=400)) * 100.0 / Count('id')
-    ).filter(error_rate__gt=0).order_by('-error_rate')[:10]
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # HTTP 상태 코드별 오류 분석
+        cursor.execute("""
+            SELECT 
+                status_code,
+                COUNT(*) as count,
+                AVG(elapsed) as avg_response_time
+            FROM test_api 
+            WHERE status_code >= 400
+            GROUP BY status_code
+            ORDER BY count DESC
+        """)
+        
+        error_stats = []
+        for row in cursor.fetchall():
+            error_stats.append({
+                'status_code': row[0],
+                'count': row[1],
+                'avg_response_time': row[2] or 0
+            })
+        
+        # 오류가 발생한 URL 분석
+        cursor.execute("""
+            SELECT 
+                url,
+                status_code,
+                COUNT(*) as count
+            FROM test_api 
+            WHERE status_code >= 400
+            GROUP BY url, status_code
+            ORDER BY count DESC
+            LIMIT 20
+        """)
+        
+        error_urls = []
+        for row in cursor.fetchall():
+            error_urls.append({
+                'url': row[0],
+                'status_code': row[1],
+                'count': row[2]
+            })
+        
+        # 테스트케이스별 오류율
+        cursor.execute("""
+            SELECT 
+                test_case_id,
+                COUNT(*) as total_calls,
+                COUNT(CASE WHEN status_code >= 400 THEN 1 END) as error_calls,
+                (COUNT(CASE WHEN status_code >= 400 THEN 1 END) * 100.0 / COUNT(*)) as error_rate
+            FROM test_api 
+            GROUP BY test_case_id
+            HAVING error_rate > 0
+            ORDER BY error_rate DESC
+            LIMIT 10
+        """)
+        
+        test_case_errors = []
+        for row in cursor.fetchall():
+            test_case_errors.append({
+                'test_case_id': row[0],
+                'total_calls': row[1],
+                'error_calls': row[2],
+                'error_rate': row[3]
+            })
+        
+        conn.close()
+        
+    except Exception as e:
+        error_stats = []
+        error_urls = []
+        test_case_errors = []
     
     context = {
         'error_stats': error_stats,

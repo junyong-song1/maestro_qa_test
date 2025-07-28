@@ -1,0 +1,125 @@
+{% extends 'qa_monitor/base.html' %}
+
+{% block title %}API 오류 분석 - QA 모니터링{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-exclamation-triangle"></i> API 오류 분석
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <!-- HTTP 상태 코드별 오류 분석 -->
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">HTTP 상태 코드별 오류</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-striped">
+                                            <thead>
+                                                <tr>
+                                                    <th>상태 코드</th>
+                                                    <th>오류 수</th>
+                                                    <th>평균 응답시간</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for stat in error_stats %}
+                                                <tr>
+                                                    <td>
+                                                        <span class="badge badge-danger">{{ stat.status_code }}</span>
+                                                    </td>
+                                                    <td>{{ stat.count }}</td>
+                                                    <td>{{ stat.avg_response_time|floatformat:2 }}초</td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">테스트케이스별 오류율</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-striped">
+                                            <thead>
+                                                <tr>
+                                                    <th>테스트케이스</th>
+                                                    <th>총 호출</th>
+                                                    <th>오류 수</th>
+                                                    <th>오류율</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for stat in test_case_errors %}
+                                                <tr>
+                                                    <td>TC{{ stat.test_case_id }}</td>
+                                                    <td>{{ stat.total_calls }}</td>
+                                                    <td>{{ stat.error_calls }}</td>
+                                                    <td>
+                                                        <span class="badge badge-{% if stat.error_rate > 10 %}danger{% elif stat.error_rate > 5 %}warning{% else %}info{% endif %}">
+                                                            {{ stat.error_rate|floatformat:1 }}%
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 오류가 발생한 URL 분석 -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">오류가 발생한 URL 분석</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-striped">
+                                            <thead>
+                                                <tr>
+                                                    <th>URL</th>
+                                                    <th>상태 코드</th>
+                                                    <th>오류 수</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for url in error_urls %}
+                                                <tr>
+                                                    <td>{{ url.url|truncatechars:60 }}</td>
+                                                    <td>
+                                                        <span class="badge badge-danger">{{ url.status_code }}</span>
+                                                    </td>
+                                                    <td>{{ url.count }}</td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

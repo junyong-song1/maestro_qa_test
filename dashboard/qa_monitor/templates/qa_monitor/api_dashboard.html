@@ -1,0 +1,186 @@
+{% extends 'qa_monitor/base.html' %}
+
+{% block title %}API 대시보드 - QA 모니터링{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-chart-line"></i> API 성능 대시보드
+                    </h3>
+                    <div class="card-tools">
+                        <span class="badge badge-info">{{ date_range.start }} ~ {{ date_range.end }}</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- API 통계 요약 -->
+                    <div class="row">
+                        <div class="col-lg-3 col-6">
+                            <div class="small-box bg-info">
+                                <div class="inner">
+                                    <h3>{{ api_stats.total_calls }}</h3>
+                                    <p>총 API 호출</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-exchange-alt"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-6">
+                            <div class="small-box bg-success">
+                                <div class="inner">
+                                    <h3>{{ api_stats.success_rate|floatformat:1 }}%</h3>
+                                    <p>성공률</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-6">
+                            <div class="small-box bg-warning">
+                                <div class="inner">
+                                    <h3>{{ api_stats.avg_response_time|floatformat:2 }}초</h3>
+                                    <p>평균 응답시간</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-6">
+                            <div class="small-box bg-danger">
+                                <div class="inner">
+                                    <h3>{{ api_stats.error_count }}</h3>
+                                    <p>오류 수</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 시간대별 API 호출 차트 -->
+                    <div class="row">
+                        <div class="col-lg-8">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">시간대별 API 호출 분포</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="hourlyChart" style="height: 300px;"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">테스트케이스별 API 호출</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>테스트케이스</th>
+                                                    <th>호출 수</th>
+                                                    <th>평균 응답시간</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for stat in test_case_api_stats %}
+                                                <tr>
+                                                    <td>TC{{ stat.test_case_id }}</td>
+                                                    <td>{{ stat.api_count }}</td>
+                                                    <td>{{ stat.avg_response_time|floatformat:2 }}초</td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- URL별 API 호출 통계 -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">URL별 API 호출 통계</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-striped">
+                                            <thead>
+                                                <tr>
+                                                    <th>URL</th>
+                                                    <th>호출 수</th>
+                                                    <th>평균 응답시간</th>
+                                                    <th>오류율</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for stat in url_stats %}
+                                                <tr>
+                                                    <td>{{ stat.url|truncatechars:50 }}</td>
+                                                    <td>{{ stat.call_count }}</td>
+                                                    <td>{{ stat.avg_response|floatformat:2 }}초</td>
+                                                    <td>
+                                                        <span class="badge badge-{% if stat.error_rate > 10 %}danger{% elif stat.error_rate > 5 %}warning{% else %}success{% endif %}">
+                                                            {{ stat.error_rate|floatformat:1 }}%
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+$(document).ready(function() {
+    // 시간대별 API 호출 차트
+    var hourlyData = {{ hourly_stats|safe }};
+    var ctx = document.getElementById('hourlyChart').getContext('2d');
+    var hourlyChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: hourlyData.map(function(item) { return item.hour + '시'; }),
+            datasets: [{
+                label: 'API 호출 수',
+                data: hourlyData.map(function(item) { return item.call_count; }),
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %} 

@@ -5,6 +5,10 @@ from typing import Optional
 
 DB_PATH = "artifacts/test_log.db"
 
+def get_db_connection(db_path: str = DB_PATH):
+    """데이터베이스 연결을 반환합니다."""
+    return sqlite3.connect(db_path)
+
 def init_db(db_path: str = DB_PATH):
     conn = sqlite3.connect(db_path)
     c = conn.cursor()

@@ -57,8 +57,8 @@ class MaestroHierarchyCapture:
             # Maestro hierarchy 명령 실행
             import subprocess
             
-            cmd = f"maestro hierarchy --device {device_serial}"
-            result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=30)
+            cmd = ["maestro", "--device", device_serial, "hierarchy"]
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
             
             if result.returncode != 0:
                 logger.error(f"Hierarchy 캡처 실패: {result.stderr}")
