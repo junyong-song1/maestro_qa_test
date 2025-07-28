@@ -1,0 +1,22 @@
+{
+  "test_case_id": "TC314792",
+  "enabled": true,
+  "expected_apis": [
+    {
+      "name": "콘텐츠 목록 API",
+      "pattern": "/api/content/list",
+      "method": "GET",
+      "expected_status": 200,
+      "required": true
+    },
+    {
+      "name": "콘텐츠 상세 API",
+      "pattern": "/api/content/detail",
+      "method": "GET",
+      "expected_status": 200,
+      "required": true
+    }
+  ],
+  "created_at": "/Users/songjun-yong/Workspace/qa_auto_test_project",
+  "description": "API 검증 설정 for TC314792"
+}

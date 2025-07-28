@@ -129,6 +129,27 @@
                     </svg>
                     <span class="text-xs">설정</span>
                 </a>
+
+                    <li class="nav-item">
+                        <a href="{% url 'qa_monitor:api_dashboard' %}" class="nav-link">
+                            <i class="nav-icon fas fa-chart-line"></i>
+                            <p>API 대시보드</p>
+                        </a>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a href="{% url 'qa_monitor:menu_api_logs' %}" class="nav-link">
+                            <i class="nav-icon fas fa-list"></i>
+                            <p>메뉴별 API 로그</p>
+                        </a>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a href="{% url 'qa_monitor:hierarchy_analysis' %}" class="nav-link">
+                            <i class="nav-icon fas fa-sitemap"></i>
+                            <p>UI Hierarchy 분석</p>
+                        </a>
+                    </li>
             </nav>
 
             <!-- User Profile -->

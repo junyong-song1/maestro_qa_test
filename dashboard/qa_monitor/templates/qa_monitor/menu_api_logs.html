@@ -1,0 +1,201 @@
+{% extends 'qa_monitor/base.html' %}
+
+{% block title %}메뉴별 API 로그 - QA 모니터링{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-list"></i> 메뉴별 API 로그 분석
+                    </h3>
+                    <div class="card-tools">
+                        <span class="badge badge-info">{{ total_menus }}개 메뉴</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if menu_api_stats %}
+                        <div class="row">
+                            {% for menu_name, stats in menu_api_stats.items %}
+                            <div class="col-lg-6 col-md-12 mb-4">
+                                <div class="card border-left-primary shadow h-100">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">
+                                            <i class="fas fa-folder"></i> {{ menu_name }}
+                                        </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-6">
+                                                <div class="info-box bg-light">
+                                                    <div class="info-box-content p-3">
+                                                        <span class="info-box-text">총 API 호출</span>
+                                                        <span class="info-box-number">{{ stats.total_calls }}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="info-box bg-light">
+                                                    <div class="info-box-content p-3">
+                                                        <span class="info-box-text">고유 API</span>
+                                                        <span class="info-box-number">{{ stats.unique_apis }}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="row mt-3">
+                                            <div class="col-6">
+                                                <div class="info-box bg-success">
+                                                    <div class="info-box-content p-3">
+                                                        <span class="info-box-text">성공</span>
+                                                        <span class="info-box-number">{{ stats.success_calls }}</span>
+                                                        <div class="progress">
+                                                            <div class="progress-bar" style="width: {% widthratio stats.success_calls stats.total_calls 100 %}%"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="info-box bg-danger">
+                                                    <div class="info-box-content p-3">
+                                                        <span class="info-box-text">실패</span>
+                                                        <span class="info-box-number">{{ stats.error_calls }}</span>
+                                                        <div class="progress">
+                                                            <div class="progress-bar" style="width: {% widthratio stats.error_calls stats.total_calls 100 %}%"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="row mt-3">
+                                            <div class="col-12">
+                                                <div class="info-box bg-info">
+                                                    <div class="info-box-content p-3">
+                                                        <span class="info-box-text">평균 응답 시간</span>
+                                                        <span class="info-box-number">{{ stats.avg_response_time|floatformat:2 }}초</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- 최근 API 호출 목록 -->
+                                        <div class="mt-3">
+                                            <h6><i class="fas fa-history"></i> 최근 API 호출</h6>
+                                            <div class="table-responsive">
+                                                <table class="table table-sm">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>메서드</th>
+                                                            <th>URL</th>
+                                                            <th>상태</th>
+                                                            <th>응답시간</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for call in stats.api_calls|slice:":5" %}
+                                                        <tr>
+                                                            <td>
+                                                                <span class="badge badge-{% if call.method == 'GET' %}primary{% elif call.method == 'POST' %}success{% elif call.method == 'PUT' %}warning{% elif call.method == 'DELETE' %}danger{% else %}secondary{% endif %}">
+                                                                    {{ call.method }}
+                                                                </span>
+                                                            </td>
+                                                            <td>
+                                                                <small class="text-muted">{{ call.url|truncatechars:50 }}</small>
+                                                            </td>
+                                                            <td>
+                                                                <span class="badge badge-{% if call.status_code < 400 %}success{% else %}danger{% endif %}">
+                                                                    {{ call.status_code }}
+                                                                </span>
+                                                            </td>
+                                                            <td>
+                                                                <small>{{ call.elapsed|floatformat:2 }}초</small>
+                                                            </td>
+                                                        </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-info-circle fa-3x text-muted mb-3"></i>
+                            <h4 class="text-muted">API 로그 데이터가 없습니다</h4>
+                            <p class="text-muted">테스트를 실행하여 API 로그를 수집해주세요.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- API 상세 모달 -->
+<div class="modal fade" id="apiDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">API 호출 상세</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="apiDetailContent">
+                    <!-- 동적으로 내용이 로드됩니다 -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // API 상세 정보 모달
+    $('.api-detail-btn').click(function() {
+        var menuName = $(this).data('menu');
+        var apiData = $(this).data('api');
+        
+        $('#apiDetailContent').html(`
+            <h6>${menuName} - API 호출 상세</h6>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>시간</th>
+                            <th>메서드</th>
+                            <th>URL</th>
+                            <th>상태</th>
+                            <th>응답시간</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${apiData.map(api => `
+                            <tr>
+                                <td>${new Date(api.created_at).toLocaleString()}</td>
+                                <td><span class="badge badge-primary">${api.method}</span></td>
+                                <td>${api.url}</td>
+                                <td><span class="badge badge-${api.status_code < 400 ? 'success' : 'danger'}">${api.status_code}</span></td>
+                                <td>${api.elapsed.toFixed(2)}초</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `);
+        
+        $('#apiDetailModal').modal('show');
+    });
+});
+</script>
+{% endblock %} 

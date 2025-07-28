@@ -1,0 +1,36 @@
+{
+  "test_case_id": "TC314791",
+  "enabled": true,
+  "expected_apis": [
+    {
+      "name": "콘텐츠 목록 API",
+      "pattern": "/api/content/list",
+      "method": "GET",
+      "expected_status": 200,
+      "required": true
+    },
+    {
+      "name": "콘텐츠 상세 API",
+      "pattern": "/api/content/detail",
+      "method": "GET",
+      "expected_status": 200,
+      "required": true
+    },
+    {
+      "name": "재생 시작 API",
+      "pattern": "/api/play/start",
+      "method": "POST",
+      "expected_status": 200,
+      "required": true
+    },
+    {
+      "name": "재생 상태 API",
+      "pattern": "/api/play/status",
+      "method": "GET",
+      "expected_status": 200,
+      "required": false
+    }
+  ],
+  "created_at": "/Users/songjun-yong/Workspace/qa_auto_test_project",
+  "description": "API 검증 설정 for TC314791"
+}

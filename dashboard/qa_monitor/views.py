@@ -353,3 +353,221 @@ def api_error_analysis(request):
     }
     
     return render(request, 'qa_monitor/api_error_analysis.html', context)
+
+def menu_api_logs(request):
+    """메뉴별 API 로그 대시보드"""
+    from scripts.utils.testlog_db import get_db_connection
+    
+    # 메뉴별 API 호출 통계
+    menu_api_stats = {}
+    
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # 테스트케이스별 API 호출 데이터 조회
+        cursor.execute("""
+            SELECT 
+                ta.test_case_id,
+                ta.url,
+                ta.method,
+                ta.status_code,
+                ta.elapsed,
+                ta.created_at,
+                tl.title as test_title
+            FROM test_api ta
+            LEFT JOIN test_log tl ON ta.test_case_id = tl.case_id
+            ORDER BY ta.created_at DESC
+            LIMIT 1000
+        """)
+        
+        api_calls = cursor.fetchall()
+        
+        # 메뉴별로 API 호출 그룹화
+        for call in api_calls:
+            test_case_id, url, method, status_code, elapsed, created_at, test_title = call
+            
+            # 테스트 제목에서 메뉴 추출
+            menu_name = extract_menu_from_title(test_title) if test_title else f"TC{test_case_id}"
+            
+            if menu_name not in menu_api_stats:
+                menu_api_stats[menu_name] = {
+                    'total_calls': 0,
+                    'success_calls': 0,
+                    'error_calls': 0,
+                    'avg_response_time': 0,
+                    'api_calls': [],
+                    'unique_apis': set()
+                }
+            
+            menu_api_stats[menu_name]['total_calls'] += 1
+            menu_api_stats[menu_name]['api_calls'].append({
+                'url': url,
+                'method': method,
+                'status_code': status_code,
+                'elapsed': elapsed,
+                'created_at': created_at
+            })
+            menu_api_stats[menu_name]['unique_apis'].add(f"{method} {url}")
+            
+            if status_code < 400:
+                menu_api_stats[menu_name]['success_calls'] += 1
+            else:
+                menu_api_stats[menu_name]['error_calls'] += 1
+        
+        # 평균 응답 시간 계산
+        for menu_name, stats in menu_api_stats.items():
+            if stats['api_calls']:
+                total_time = sum(call['elapsed'] for call in stats['api_calls'])
+                stats['avg_response_time'] = total_time / len(stats['api_calls'])
+                stats['unique_apis'] = len(stats['unique_apis'])
+        
+        conn.close()
+        
+    except Exception as e:
+        logger.error(f"메뉴별 API 로그 조회 실패: {e}")
+        menu_api_stats = {}
+    
+    context = {
+        'menu_api_stats': menu_api_stats,
+        'total_menus': len(menu_api_stats)
+    }
+    
+    return render(request, 'qa_monitor/menu_api_logs.html', context)
+
+def hierarchy_analysis(request):
+    """UI Hierarchy 분석 대시보드"""
+    from scripts.utils.maestro_hierarchy_capture import MaestroHierarchyCapture
+    
+    capture = MaestroHierarchyCapture()
+    
+    # 최근 Hierarchy 데이터 조회
+    recent_hierarchies = capture.get_hierarchy_history(limit=50)
+    
+    # 테스트케이스별 통계
+    test_case_stats = {}
+    for hierarchy in recent_hierarchies:
+        test_case_id = hierarchy['test_case_id']
+        if test_case_id not in test_case_stats:
+            test_case_stats[test_case_id] = {
+                'total_screens': 0,
+                'total_elements': 0,
+                'avg_clickable': 0,
+                'avg_text_elements': 0,
+                'screens': []
+            }
+        
+        test_case_stats[test_case_id]['total_screens'] += 1
+        test_case_stats[test_case_id]['total_elements'] += hierarchy['element_count']
+        test_case_stats[test_case_id]['screens'].append({
+            'screen_name': hierarchy['screen_name'],
+            'element_count': hierarchy['element_count'],
+            'clickable_elements': hierarchy['clickable_elements'],
+            'text_elements': hierarchy['text_elements'],
+            'captured_at': hierarchy['captured_at']
+        })
+    
+    # 평균 계산
+    for test_case_id, stats in test_case_stats.items():
+        if stats['total_screens'] > 0:
+            stats['avg_clickable'] = sum(s['clickable_elements'] for s in stats['screens']) / stats['total_screens']
+            stats['avg_text_elements'] = sum(s['text_elements'] for s in stats['screens']) / stats['total_screens']
+    
+    # UI 안정성 분석
+    ui_stability_analysis = {}
+    for test_case_id in test_case_stats.keys():
+        stability = capture.analyze_ui_changes(test_case_id)
+        if 'stability_score' in stability:
+            ui_stability_analysis[test_case_id] = stability
+    
+    context = {
+        'recent_hierarchies': recent_hierarchies,
+        'test_case_stats': test_case_stats,
+        'ui_stability_analysis': ui_stability_analysis,
+        'total_hierarchies': len(recent_hierarchies)
+    }
+    
+    return render(request, 'qa_monitor/hierarchy_analysis.html', context)
+
+def hierarchy_detail(request, test_case_id):
+    """특정 테스트케이스의 Hierarchy 상세 분석"""
+    from scripts.utils.maestro_hierarchy_capture import MaestroHierarchyCapture
+    
+    capture = MaestroHierarchyCapture()
+    
+    # 해당 테스트케이스의 모든 Hierarchy 데이터
+    hierarchies = capture.get_hierarchy_history(test_case_id, limit=100)
+    
+    # UI 변화 분석
+    ui_changes = capture.analyze_ui_changes(test_case_id)
+    
+    # 화면별 통계
+    screen_stats = {}
+    for hierarchy in hierarchies:
+        screen_name = hierarchy['screen_name']
+        if screen_name not in screen_stats:
+            screen_stats[screen_name] = {
+                'count': 0,
+                'total_elements': 0,
+                'total_clickable': 0,
+                'total_text': 0,
+                'avg_elements': 0,
+                'captures': []
+            }
+        
+        screen_stats[screen_name]['count'] += 1
+        screen_stats[screen_name]['total_elements'] += hierarchy['element_count']
+        screen_stats[screen_name]['total_clickable'] += hierarchy['clickable_elements']
+        screen_stats[screen_name]['total_text'] += hierarchy['text_elements']
+        screen_stats[screen_name]['captures'].append({
+            'element_count': hierarchy['element_count'],
+            'clickable_elements': hierarchy['clickable_elements'],
+            'text_elements': hierarchy['text_elements'],
+            'captured_at': hierarchy['captured_at']
+        })
+    
+    # 평균 계산
+    for screen_name, stats in screen_stats.items():
+        if stats['count'] > 0:
+            stats['avg_elements'] = stats['total_elements'] / stats['count']
+    
+    context = {
+        'test_case_id': test_case_id,
+        'hierarchies': hierarchies,
+        'ui_changes': ui_changes,
+        'screen_stats': screen_stats,
+        'total_screens': len(screen_stats)
+    }
+    
+    return render(request, 'qa_monitor/hierarchy_detail.html', context)
+
+def extract_menu_from_title(title):
+    """테스트 제목에서 메뉴명 추출"""
+    if not title:
+        return "Unknown"
+    
+    # 메뉴 키워드 매핑
+    menu_keywords = {
+        '로그인': '로그인/인증',
+        '회원가입': '로그인/인증',
+        '프로필': '프로필 관리',
+        '검색': '검색',
+        '시청': '콘텐츠 시청',
+        '다운로드': '콘텐츠 다운로드',
+        '예약': '시청 예약',
+        '티빙톡': '티빙톡',
+        '뉴스': '뉴스',
+        '스포츠': '스포츠',
+        '영화': '영화',
+        '시리즈': '시리즈',
+        '라이브': '라이브',
+        '스페셜관': '스페셜관',
+        '메인': '메인 화면',
+        '탭': '탭 네비게이션'
+    }
+    
+    for keyword, menu_name in menu_keywords.items():
+        if keyword in title:
+            return menu_name
+    
+    return "기타"

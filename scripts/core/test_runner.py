@@ -796,6 +796,56 @@ class MaestroTestRunner(TestRunner):
                                 logger.info(f"[{device.serial}] API 통계 - DB에 저장된 데이터 없음")
                         except Exception as e:
                             logger.warning(f"[{device.serial}] API 통계 조회 실패: {e}")
+                        
+                        # API 검증 실행 (JSON 설정 파일 기반)
+                        try:
+                            from scripts.utils.maestro_api_validator import validate_maestro_test_with_api
+                            from scripts.utils.api_validation_config import APIValidationConfig
+                            
+                            # API 검증 설정 로드
+                            config_manager = APIValidationConfig()
+                            api_config = config_manager.load_validation_config(str(case_id))
+                            
+                            if api_config and api_config.get('enabled', False):
+                                logger.info(f"[{device.serial}] API 검증 시작: TC{case_id}")
+                                
+                                # API 검증 실행
+                                validation_result = validate_maestro_test_with_api(str(case_id), api_config['expected_apis'])
+                                
+                                if validation_result['status'] == 'FAIL':
+                                    logger.warning(f"[{device.serial}] API 검증 실패: {validation_result.get('message', 'Unknown error')}")
+                                    # API 검증 실패 시 테스트 결과에 반영
+                                    if status == 'passed':
+                                        status = 'failed'
+                                        error_msg = f"API 검증 실패: {validation_result.get('message', 'Unknown error')}"
+                                elif validation_result['status'] == 'PASS':
+                                    logger.info(f"[{device.serial}] API 검증 성공")
+                                else:
+                                    logger.info(f"[{device.serial}] API 검증 스킵: {validation_result.get('message', 'No validation config')}")
+                            else:
+                                logger.info(f"[{device.serial}] API 검증 설정이 없음: TC{case_id}")
+                                
+                        except Exception as e:
+                            logger.warning(f"[{device.serial}] API 검증 실행 실패: {e}")
+                        
+                        # UI Hierarchy 캡처
+                        try:
+                            from scripts.utils.maestro_hierarchy_capture import capture_hierarchy_for_test
+                            
+                            logger.info(f"[{device.serial}] UI Hierarchy 캡처 시작")
+                            hierarchy_result = capture_hierarchy_for_test(
+                                device_serial=device.serial,
+                                test_case_id=case_id,
+                                screen_name=f"TC{case_id}_Final"
+                            )
+                            
+                            if hierarchy_result:
+                                logger.info(f"[{device.serial}] UI Hierarchy 캡처 완료: {hierarchy_result.get('stats', {}).get('total', 0)}개 요소")
+                            else:
+                                logger.warning(f"[{device.serial}] UI Hierarchy 캡처 실패")
+                                
+                        except Exception as e:
+                            logger.warning(f"[{device.serial}] UI Hierarchy 캡처 실행 실패: {e}")
                     except Exception as e:
                         logger.warning(f"[{device.serial}] API 덤프 처리 실패: {e}")
                 else:
