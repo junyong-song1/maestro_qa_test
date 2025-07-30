@@ -34,13 +34,14 @@ def ensure_api_table():
             elapsed REAL,
             request_body TEXT,
             response_body TEXT,
+            run_id TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     """)
     conn.commit()
     conn.close()
 
-def parse_mitmproxy_dump(dump_path, test_case_id, serial, model, os_version, tving_version, timestamp):
+def parse_mitmproxy_dump(dump_path, test_case_id, serial, model, os_version, tving_version, timestamp, run_id=None):
     ensure_api_table()
     conn = sqlite3.connect(DB_PATH, timeout=30.0)
     # WAL 모드 재설정은 생략 (ensure_api_table에서만 시도)
@@ -83,9 +84,9 @@ def parse_mitmproxy_dump(dump_path, test_case_id, serial, model, os_version, tvi
                         
                         try:
                             cursor.execute(f"""
-                                INSERT INTO {API_TABLE} (test_case_id, serial, model, os_version, tving_version, timestamp, url, method, status_code, elapsed, request_body, response_body)
-                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                            """, (test_case_id, serial, model, os_version, tving_version, timestamp, url, method, status_code, elapsed, request_body, response_body))
+                                INSERT INTO {API_TABLE} (test_case_id, serial, model, os_version, tving_version, timestamp, url, method, status_code, elapsed, request_body, response_body, run_id)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            """, (test_case_id, serial, model, os_version, tving_version, timestamp, url, method, status_code, elapsed, request_body, response_body, run_id))
                             processed_count += 1
                         except Exception as e:
                             error_count += 1
@@ -122,9 +123,9 @@ def parse_mitmproxy_dump(dump_path, test_case_id, serial, model, os_version, tvi
                     status_code = int(status_match.group(2)) if status_match else 200
                     
                     cursor.execute(f"""
-                        INSERT INTO {API_TABLE} (test_case_id, serial, model, os_version, tving_version, timestamp, url, method, status_code, elapsed, request_body, response_body)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """, (test_case_id, serial, model, os_version, tving_version, timestamp, url, method, status_code, None, None, None))
+                        INSERT INTO {API_TABLE} (test_case_id, serial, model, os_version, tving_version, timestamp, url, method, status_code, elapsed, request_body, response_body, run_id)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """, (test_case_id, serial, model, os_version, tving_version, timestamp, url, method, status_code, None, None, None, run_id))
                     processed_count += 1
                 except Exception as e:
                     error_count += 1
@@ -138,9 +139,12 @@ def parse_mitmproxy_dump(dump_path, test_case_id, serial, model, os_version, tvi
     print(f"API 캡처 완료: 총 {processed_count}건 저장, {error_count}건 오류")
 
 if __name__ == "__main__":
-    # 예시 실행: python api_capture.py dump_file test_case_id serial model os_version tving_version timestamp
+    # 예시 실행: python api_capture.py dump_file test_case_id serial model os_version tving_version timestamp [run_id]
     import sys
     if len(sys.argv) < 8:
-        print("Usage: python api_capture.py <mitmproxy_dump_file> <test_case_id> <serial> <model> <os_version> <tving_version> <timestamp>")
+        print("Usage: python api_capture.py <mitmproxy_dump_file> <test_case_id> <serial> <model> <os_version> <tving_version> <timestamp> [run_id]")
         exit(1)
-    parse_mitmproxy_dump(*sys.argv[1:]) 
+    
+    # run_id는 선택적 매개변수
+    run_id = sys.argv[8] if len(sys.argv) > 8 else None
+    parse_mitmproxy_dump(*sys.argv[1:8], run_id) 

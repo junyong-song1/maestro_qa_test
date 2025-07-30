@@ -1,120 +1,362 @@
 {% extends "qa_monitor/base.html" %}
+{% load static %}
+
 {% block title %}{{ run_name }} 상세{% endblock %}
+{% block page_title %}테스트런 상세 정보{% endblock %}
+{% block page_subtitle %}{{ run_name }}{% endblock %}
+
 {% block content %}
-<div class="w-full py-8 px-4">
-  <h2 class="text-2xl font-bold mb-8 text-center">{{ run_name }}</h2>
-  {% if testcases %}
-  <!-- 스크롤 안내 -->
-  <div class="text-xs text-gray-400 text-center mb-2">← 좌우로 스크롤하여 전체 테스트케이스를 확인하세요 →</div>
-  <!-- 카드형 테스트케이스 리스트 -->
-  <div class="overflow-x-scroll max-w-full mb-8 scrollbar-thin scrollbar-thumb-gray-300">
-    <div id="case-card-list" class="flex gap-4 min-w-[1200px] w-max">
-      {% for case in testcases %}
-      <div class="case-card cursor-pointer flex-shrink-0 w-44 bg-white rounded-xl shadow-md border-2 border-transparent hover:border-blue-400 transition p-4 flex flex-col items-center"
-           data-case-id="{{ case.id }}" data-title="{{ case.title }}" data-status="{{ case.status }}" data-description="{{ case.description|default:'' }}" data-comments="{{ case.comments|join:'\n\n' }}">
-        <div class="w-12 h-12 flex flex-col items-center justify-center gap-1 rounded-full text-white text-xl font-bold mb-2
-          {% if case.status == 'passed' %} bg-green-500
-          {% elif case.status == 'failed' %} bg-red-500
-          {% elif case.status == 'blocked' %} bg-gray-400
-          {% elif case.status == 'retest' %} bg-yellow-400
-          {% else %} bg-blue-200 text-gray-700
-          {% endif %}">
-          <span class="text-lg font-bold">{{ forloop.counter }}</span>
-          <span>
-            {% if case.status == 'passed' %}
-              <svg class="w-5 h-5 inline-block" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
-            {% elif case.status == 'failed' %}
-              <svg class="w-5 h-5 inline-block" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-            {% elif case.status == 'blocked' %}
-              <svg class="w-5 h-5 inline-block" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" /></svg>
-            {% elif case.status == 'retest' %}
-              <svg class="w-5 h-5 inline-block" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-            {% else %}
-              <svg class="w-5 h-5 inline-block" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" /></svg>
-            {% endif %}
-          </span>
+<div class="container mx-auto px-4 py-8">
+    {% if error %}
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+        <strong>오류:</strong> {{ error }}
+    </div>
+    {% else %}
+    
+    <!-- Top Summary Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-2 bg-blue-100 rounded-lg">
+                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">총 테스트</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ run_data.total_tests }}</p>
+                </div>
+            </div>
         </div>
-        <div class="text-center font-semibold text-sm mb-1">{{ case.title }}</div>
-        <span class="inline-block px-2 py-0.5 rounded text-xs font-semibold mt-1
-          {% if case.status == 'passed' %} bg-green-100 text-green-800
-          {% elif case.status == 'failed' %} bg-red-100 text-red-800
-          {% elif case.status == 'blocked' %} bg-gray-200 text-gray-700
-          {% elif case.status == 'retest' %} bg-yellow-100 text-yellow-800
-          {% else %} bg-blue-100 text-blue-700
-          {% endif %}">
-          {{ case.status|title }}
-        </span>
-      </div>
-      {% endfor %}
+        
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-2 bg-green-100 rounded-lg">
+                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">성공률</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ run_data.success_rate|floatformat:1 }}%</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-2 bg-yellow-100 rounded-lg">
+                    <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">평균 실행시간</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ run_data.avg_elapsed|floatformat:1 }}초</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-2 bg-purple-100 rounded-lg">
+                    <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">총 실행시간</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ run_data.total_elapsed|floatformat:1 }}초</p>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-  <!-- 하단 상세 결과 영역 -->
-  <div id="case-detail-panel" class="max-w-4xl w-full mx-auto bg-gray-50 rounded-xl shadow p-6 border border-gray-200">
-    <div id="case-detail-title" class="text-lg font-bold mb-2">{{ testcases.0.title }}</div>
-    <div id="case-detail-status" class="mb-2">
-      <span class="inline-block px-2 py-0.5 rounded text-xs font-semibold
-        {% if testcases.0.status == 'passed' %} bg-green-100 text-green-800
-        {% elif testcases.0.status == 'failed' %} bg-red-100 text-red-800
-        {% elif testcases.0.status == 'blocked' %} bg-gray-200 text-gray-700
-        {% elif testcases.0.status == 'retest' %} bg-yellow-100 text-yellow-800
-        {% else %} bg-blue-100 text-blue-700
-        {% endif %}">
-        {{ testcases.0.status|title }}
-      </span>
+
+    <!-- Status Distribution -->
+    <div class="bg-white rounded-lg shadow p-6 mb-8">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">상태별 분포</h3>
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div class="text-center">
+                <div class="text-2xl font-bold text-green-600">{{ run_data.passed }}</div>
+                <div class="text-sm text-gray-600">성공</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-red-600">{{ run_data.failed }}</div>
+                <div class="text-sm text-gray-600">실패</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-orange-600">{{ run_data.blocked }}</div>
+                <div class="text-sm text-gray-600">차단</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-gray-600">{{ run_data.untested }}</div>
+                <div class="text-sm text-gray-600">미테스트</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-blue-600">{{ run_data.retest }}</div>
+                <div class="text-sm text-gray-600">재테스트</div>
+            </div>
+        </div>
     </div>
-    <div id="case-detail-desc" class="text-gray-700 text-sm">
-      {% if testcases.0.description %}
-        {{ testcases.0.description }}
-      {% elif testcases.0.comments and testcases.0.comments|length > 0 %}
-        {% for c in testcases.0.comments %}
-          <div class="mb-2 whitespace-pre-line">{{ c }}</div>
-        {% endfor %}
-      {% else %}
-        설명이 없습니다.
-      {% endif %}
+
+    <!-- Filter Buttons -->
+    <div class="bg-white rounded-lg shadow p-6 mb-6">
+        <div class="flex flex-wrap gap-2 mb-4">
+            <button class="filter-btn active px-4 py-2 rounded-lg text-sm font-medium transition-colors" data-status="all">
+                전체 ({{ total_testcases }})
+            </button>
+            <button class="filter-btn px-4 py-2 rounded-lg text-sm font-medium transition-colors" data-status="성공">
+                성공 ({{ run_data.passed }})
+            </button>
+            <button class="filter-btn px-4 py-2 rounded-lg text-sm font-medium transition-colors" data-status="실패">
+                실패 ({{ run_data.failed }})
+            </button>
+            <button class="filter-btn px-4 py-2 rounded-lg text-sm font-medium transition-colors" data-status="차단">
+                차단 ({{ run_data.blocked }})
+            </button>
+            <button class="filter-btn px-4 py-2 rounded-lg text-sm font-medium transition-colors" data-status="미테스트">
+                미테스트 ({{ run_data.untested }})
+            </button>
+            <button class="filter-btn px-4 py-2 rounded-lg text-sm font-medium transition-colors" data-status="재테스트">
+                재테스트 ({{ run_data.retest }})
+            </button>
+        </div>
+        <div class="text-sm text-gray-600">
+            <span id="filter-count">{{ total_testcases }}</span>개의 테스트케이스가 표시됩니다.
+        </div>
     </div>
-  </div>
-  <script>
-    // 카드 클릭 시 상세 결과 갱신
-    document.querySelectorAll('.case-card').forEach(function(card) {
-      card.addEventListener('click', function() {
-        // 모든 카드 테두리 초기화
-        document.querySelectorAll('.case-card').forEach(function(c) {
-          c.classList.remove('border-blue-500');
-          c.classList.add('border-transparent');
-        });
-        // 활성 카드 강조
-        card.classList.remove('border-transparent');
-        card.classList.add('border-blue-500');
-        // 상세 영역 갱신
-        document.getElementById('case-detail-title').textContent = card.dataset.title;
-        document.getElementById('case-detail-status').innerHTML = '<span class="inline-block px-2 py-0.5 rounded text-xs font-semibold ' +
-          (card.dataset.status === 'passed' ? 'bg-green-100 text-green-800' :
-           card.dataset.status === 'failed' ? 'bg-red-100 text-red-800' :
-           card.dataset.status === 'blocked' ? 'bg-gray-200 text-gray-700' :
-           card.dataset.status === 'retest' ? 'bg-yellow-100 text-yellow-800' :
-           'bg-blue-100 text-blue-700') +
-          '">' + card.dataset.status.charAt(0).toUpperCase() + card.dataset.status.slice(1) + '</span>';
-        // description, comments 순서로 표시
-        var desc = card.dataset.description;
-        var comments = card.dataset.comments ? card.dataset.comments.split('\n\n') : [];
-        var descDiv = document.getElementById('case-detail-desc');
-        if (desc) {
-          descDiv.textContent = desc;
-        } else if (comments.length > 0 && comments[0]) {
-          descDiv.innerHTML = comments.map(function(c) {
-            return '<div class="mb-2 whitespace-pre-line">' + c.replace(/\n/g, '<br>') + '</div>';
-          }).join('');
-        } else {
-          descDiv.textContent = '설명이 없습니다.';
-        }
-      });
-    });
-    // 첫 번째 카드 활성화
-    document.querySelectorAll('.case-card')[0]?.classList.add('border-blue-500');
-  </script>
-  {% else %}
-    <div class="text-gray-400">테스트케이스가 없습니다.</div>
-  {% endif %}
+
+    <!-- Test Cases Table -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-900">테스트케이스 목록</h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">테스트케이스</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상태</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">실행시간</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">API 호출</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">단말기</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상세</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200" id="testcase-table">
+                    {% for testcase in testcases %}
+                    <tr class="testcase-row" data-status="{{ testcase.status }}">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div>
+                                <div class="text-sm font-medium text-gray-900">{{ testcase.step_name }}</div>
+                                <div class="text-sm text-gray-500">ID: {{ testcase.id }}</div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if testcase.status == '성공' %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    성공
+                                </span>
+                            {% elif testcase.status == '실패' %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                    실패
+                                </span>
+                            {% elif testcase.status == '차단' %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                    차단
+                                </span>
+                            {% elif testcase.status == '미테스트' %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                    미테스트
+                                </span>
+                            {% elif testcase.status == '재테스트' %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    재테스트
+                                </span>
+                            {% else %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                    {{ testcase.status }}
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {{ testcase.elapsed|floatformat:1 }}초
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <div>{{ testcase.api_stats.calls }}건</div>
+                            {% if testcase.api_stats.failed > 0 %}
+                                <div class="text-red-600 text-xs">{{ testcase.api_stats.failed }}건 실패</div>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <div>{{ testcase.model }}</div>
+                            <div class="text-gray-500 text-xs">{{ testcase.os_version }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button onclick="showTestCaseDetail('{{ testcase.id }}')" class="text-indigo-600 hover:text-indigo-900">
+                                상세보기
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
 </div>
+
+<!-- Test Case Detail Modal -->
+<div id="testcase-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-medium text-gray-900" id="modal-title">테스트케이스 상세 정보</h3>
+                <button onclick="closeTestCaseDetail()" class="text-gray-400 hover:text-gray-600" aria-label="닫기">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div id="modal-content">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.filter-btn {
+    background-color: #f3f4f6;
+    color: #6b7280;
+}
+
+.filter-btn:hover {
+    background-color: #e5e7eb;
+}
+
+.filter-btn.active {
+    background-color: #3b82f6;
+    color: white;
+}
+
+.testcase-row {
+    transition: opacity 0.2s ease-in-out;
+}
+
+.testcase-row.hidden {
+    display: none;
+}
+</style>
+
+<script>
+// Filter functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    const testcaseRows = document.querySelectorAll('.testcase-row');
+    const filterCount = document.getElementById('filter-count');
+    
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const status = this.getAttribute('data-status');
+            
+            // Update active button
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Filter rows
+            let visibleCount = 0;
+            testcaseRows.forEach(row => {
+                const rowStatus = row.getAttribute('data-status');
+                if (status === 'all' || rowStatus === status) {
+                    row.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    row.classList.add('hidden');
+                }
+            });
+            
+            // Update count
+            filterCount.textContent = visibleCount;
+        });
+    });
+});
+
+// Modal functionality
+function showTestCaseDetail(testCaseId) {
+    const modal = document.getElementById('testcase-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalContent = document.getElementById('modal-content');
+    
+    // Find test case data
+    const testcaseRows = document.querySelectorAll('.testcase-row');
+    let testcaseData = null;
+    
+    testcaseRows.forEach(row => {
+        const idElement = row.querySelector('.text-sm.text-gray-500');
+        if (idElement && idElement.textContent.includes(testCaseId)) {
+            const stepName = row.querySelector('.text-sm.font-medium').textContent;
+            const status = row.getAttribute('data-status');
+            const elapsed = row.querySelector('td:nth-child(3)').textContent;
+            const apiCalls = row.querySelector('td:nth-child(4)').textContent.trim();
+            const device = row.querySelector('td:nth-child(5)').textContent.trim();
+            
+            testcaseData = {
+                id: testCaseId,
+                stepName: stepName,
+                status: status,
+                elapsed: elapsed,
+                apiCalls: apiCalls,
+                device: device
+            };
+        }
+    });
+    
+    if (testcaseData) {
+        modalTitle.textContent = `테스트케이스 ${testCaseId} 상세 정보`;
+        modalContent.innerHTML = `
+            <div class="space-y-4">
+                <div>
+                    <h4 class="font-medium text-gray-900">기본 정보</h4>
+                    <div class="mt-2 space-y-2 text-sm">
+                        <div><span class="font-medium">테스트케이스 ID:</span> ${testcaseData.id}</div>
+                        <div><span class="font-medium">스텝명:</span> ${testcaseData.stepName}</div>
+                        <div><span class="font-medium">상태:</span> ${testcaseData.status}</div>
+                        <div><span class="font-medium">실행시간:</span> ${testcaseData.elapsed}</div>
+                        <div><span class="font-medium">단말기:</span> ${testcaseData.device}</div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 class="font-medium text-gray-900">API 호출 정보</h4>
+                    <div class="mt-2 text-sm text-gray-600">
+                        ${testcaseData.apiCalls}
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 class="font-medium text-gray-900">실행 로그</h4>
+                    <div class="mt-2 text-sm text-gray-600">
+                        이 기능은 향후 구현 예정입니다.
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    modal.classList.remove('hidden');
+}
+
+function closeTestCaseDetail() {
+    const modal = document.getElementById('testcase-modal');
+    modal.classList.add('hidden');
+}
+
+// Close modal when clicking outside
+document.getElementById('testcase-modal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeTestCaseDetail();
+    }
+});
+</script>
 {% endblock %} 

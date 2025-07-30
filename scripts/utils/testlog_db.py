@@ -25,7 +25,8 @@ def init_db(db_path: str = DB_PATH):
         serial TEXT,
         model TEXT,
         os_version TEXT,
-        tving_version TEXT
+        tving_version TEXT,
+        run_id TEXT
     )
     """)
     conn.commit()
@@ -42,6 +43,7 @@ def log_step(
     model: Optional[str] = None,
     os_version: Optional[str] = None,
     tving_version: Optional[str] = None,
+    run_id: Optional[str] = None,
     db_path: str = DB_PATH
 ):
     if start_time is None:
@@ -53,8 +55,8 @@ def log_step(
     c = conn.cursor()
     c.execute(
         """
-        INSERT INTO test_log (test_case_id, step_name, start_time, end_time, elapsed, status, error_msg, serial, model, os_version, tving_version)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO test_log (test_case_id, step_name, start_time, end_time, elapsed, status, error_msg, serial, model, os_version, tving_version, run_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             test_case_id,
@@ -67,7 +69,8 @@ def log_step(
             serial,
             model,
             os_version,
-            tving_version
+            tving_version,
+            run_id
         )
     )
     conn.commit()

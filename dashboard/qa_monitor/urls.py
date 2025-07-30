@@ -17,7 +17,5 @@ urlpatterns = [
     path('api/errors/', views.api_error_analysis, name='api_error_analysis'),
     path('api/menu-logs/', views.menu_api_logs, name='menu_api_logs'),
     
-    # Hierarchy 분석 화면
-    path('hierarchy/', views.hierarchy_analysis, name='hierarchy_analysis'),
-    path('hierarchy/<int:test_case_id>/', views.hierarchy_detail, name='hierarchy_detail'),
+
 ]

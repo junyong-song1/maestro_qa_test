@@ -51,13 +51,31 @@ class TestRailManager:
         """ID로 단일 테스트 케이스의 상세 정보를 가져옵니다."""
         return self.client.get_case(case_id)
 
-    def get_test_cases(self, project_id: int, suite_id: int) -> Optional[List[Dict]]:
-        """특정 프로젝트와 스위트의 모든 테스트 케이스 목록을 가져옵니다."""
+    def get_test_cases(self, project_id: int = None, suite_id: int = None) -> Optional[List[Dict]]:
+        """모든 테스트 케이스 목록을 가져옵니다."""
+        if project_id is None:
+            project_id = self.project_id
+        if suite_id is None:
+            # 기본 스위트 ID 가져오기
+            suite_id = get_suite_id_from_project({
+                'url': self.client.url,
+                'project_id': project_id,
+                'username': self.client.auth[0],
+                'api_key': self.client.auth[1]
+            })
+            if not suite_id:
+                print("기본 스위트 ID를 찾을 수 없습니다.", file=sys.stderr)
+                return None
+        
         cases = self.client.get_cases(project_id, suite_id)
         if cases is None:
             print("테스트 케이스를 가져오는데 실패했습니다. API 응답을 확인하세요.", file=sys.stderr)
             return None
         return cases
+    
+    def get_test_case(self, test_id: int) -> Optional[Dict]:
+        """ID로 단일 테스트 케이스의 상세 정보를 가져옵니다."""
+        return self.client.get_case(test_id)
 
 def get_all_suites(config):
     url = config['url'].rstrip('/')

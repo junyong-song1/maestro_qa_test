@@ -51,12 +51,20 @@ class ConfigManager:
     
     def get_testrail_config(self) -> dict:
         """TestRail 설정 가져오기"""
-        return {
+        config = {
             'url': self.get('TestRail', 'url'),
             'username': self.get('TestRail', 'username'),
             'api_key': self.get('TestRail', 'api_key'),
             'project_id': self.get('TestRail', 'project_id')
         }
+        
+        # None 값이 있는지 확인
+        for key, value in config.items():
+            if value is None:
+                logger.error(f"TestRail 설정에서 {key} 값이 None입니다.")
+                raise ValueError(f"TestRail 설정에서 {key} 값이 None입니다.")
+        
+        return config
     
     def get_app_config(self) -> dict:
         """앱 설정 가져오기"""

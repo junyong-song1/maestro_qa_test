@@ -749,11 +749,15 @@ class MaestroTestRunner(TestRunner):
                         else:
                             logger.info(f"[{device.serial}] API 캡처 완료: API 호출 없음 (0 bytes)")
                         
-                        # api_capture.py로 분석 및 DB 저장
+                        # api_capture.py로 분석 및 DB 저장 (가상환경 Python 사용)
+                        venv_python = os.path.join(os.getcwd(), "venv", "bin", "python")
                         api_capture_cmd = [
-                            sys.executable, "scripts/utils/api_capture.py",
+                            venv_python, "scripts/utils/api_capture.py",
                             str(new_api_path), str(case_id), device.serial, device.model, device.os_version, device.tving_version, today
                         ]
+                        # run_id가 있으면 추가
+                        if self.current_run_id:
+                            api_capture_cmd.append(str(self.current_run_id))
                         logger.info(f"[{device.serial}] API 캡처 실행: {' '.join(api_capture_cmd)}")
                         
                         try:
@@ -828,24 +832,7 @@ class MaestroTestRunner(TestRunner):
                         except Exception as e:
                             logger.warning(f"[{device.serial}] API 검증 실행 실패: {e}")
                         
-                        # UI Hierarchy 캡처
-                        try:
-                            from scripts.utils.maestro_hierarchy_capture import capture_hierarchy_for_test
-                            
-                            logger.info(f"[{device.serial}] UI Hierarchy 캡처 시작")
-                            hierarchy_result = capture_hierarchy_for_test(
-                                device_serial=device.serial,
-                                test_case_id=case_id,
-                                screen_name=f"TC{case_id}_Final"
-                            )
-                            
-                            if hierarchy_result:
-                                logger.info(f"[{device.serial}] UI Hierarchy 캡처 완료: {hierarchy_result.get('stats', {}).get('total', 0)}개 요소")
-                            else:
-                                logger.warning(f"[{device.serial}] UI Hierarchy 캡처 실패")
-                                
-                        except Exception as e:
-                            logger.warning(f"[{device.serial}] UI Hierarchy 캡처 실행 실패: {e}")
+
                     except Exception as e:
                         logger.warning(f"[{device.serial}] API 덤프 처리 실패: {e}")
                 else:
@@ -874,7 +861,8 @@ class MaestroTestRunner(TestRunner):
                 serial=device.serial,
                 model=device.model,
                 os_version=device.os_version,
-                tving_version=device.tving_version
+                tving_version=device.tving_version,
+                run_id=str(self.current_run_id) if self.current_run_id else None
             )
     
     def _find_app_start_yaml(self) -> Optional[TestFlow]:

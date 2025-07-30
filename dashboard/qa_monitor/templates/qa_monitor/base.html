@@ -108,7 +108,7 @@
                     <span class="text-xs">대시보드</span>
                 </a>
                 
-                <a href="#" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
+                <a href="{% url 'qa_monitor:test_list' %}" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
                     <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
                     </svg>
@@ -130,26 +130,19 @@
                     <span class="text-xs">설정</span>
                 </a>
 
-                    <li class="nav-item">
-                        <a href="{% url 'qa_monitor:api_dashboard' %}" class="nav-link">
-                            <i class="nav-icon fas fa-chart-line"></i>
-                            <p>API 대시보드</p>
-                        </a>
-                    </li>
-                    
-                    <li class="nav-item">
-                        <a href="{% url 'qa_monitor:menu_api_logs' %}" class="nav-link">
-                            <i class="nav-icon fas fa-list"></i>
-                            <p>메뉴별 API 로그</p>
-                        </a>
-                    </li>
-                    
-                    <li class="nav-item">
-                        <a href="{% url 'qa_monitor:hierarchy_analysis' %}" class="nav-link">
-                            <i class="nav-icon fas fa-sitemap"></i>
-                            <p>UI Hierarchy 분석</p>
-                        </a>
-                    </li>
+                <a href="{% url 'qa_monitor:api_dashboard' %}" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
+                    <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
+                    </svg>
+                    <span class="text-xs">API 대시보드</span>
+                </a>
+                
+                <a href="{% url 'qa_monitor:menu_api_logs' %}" class="flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
+                    <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                    </svg>
+                    <span class="text-xs">API 로그</span>
+                </a>
             </nav>
 
             <!-- User Profile -->
